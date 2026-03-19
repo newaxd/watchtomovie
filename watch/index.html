@@ -1,0 +1,1771 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watch Room — Watch4Party</title>
+    <link rel="canonical" href="https://watch4party.com/room/watch">
+    <link rel="icon" type="image/png" href="../../img/hero-logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+/* ============================================================
+   WATCH4PARTY — CINEMA / IMAX WATCH ROOM
+   Aesthetic: Pure black theatre, amber/gold accents,
+   film grain texture, cinematic letterbox feel
+   ============================================================ */
+
+:root {
+    --black:       #000000;
+    --void:        #030303;
+    --pit:         #080808;
+    --charcoal:    #111111;
+    --carbon:      #1a1a1a;
+    --smoke:       #252525;
+    --ash:         #333333;
+
+    --text-bright: #f5f0e8;
+    --text-main:   #c8c0b0;
+    --text-dim:    #706860;
+    --text-ghost:  #3a3530;
+
+    --gold:        #d4a843;
+    --gold-light:  #e8c060;
+    --gold-dark:   #9a7820;
+    --gold-glow:   rgba(212, 168, 67, 0.25);
+    --amber:       #f0a030;
+
+    --blue-accent: #3a7bd5;
+    --live-red:    #e03030;
+
+    --font-display: 'Bebas Neue', sans-serif;
+    --font-body:    'DM Sans', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    --topbar-h:    52px;
+    --panel-w:     300px;
+    --radius:      6px;
+    --radius-lg:   12px;
+
+    --trans:       0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --trans-slow:  0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--black);
+    color: var(--text-main);
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ── Film grain overlay ── */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.025;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--ash); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dark); }
+
+/* ── Layout ── */
+.cinema-app {
+    display: grid;
+    grid-template-rows: var(--topbar-h) 1fr;
+    grid-template-columns: 1fr var(--panel-w);
+    height: 100vh;
+    width: 100vw;
+}
+
+/* ══════════════════════════════════════
+   TOP BAR
+══════════════════════════════════════ */
+.cinema-topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    background: var(--void);
+    border-bottom: 1px solid var(--charcoal);
+    position: relative;
+    z-index: 100;
+}
+
+/* Vertical gold accent line on left */
+.cinema-topbar::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 10px; bottom: 10px;
+    width: 2px;
+    background: linear-gradient(180deg, transparent, var(--gold), transparent);
+}
+
+/* Logo / Room name */
+.topbar-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+.topbar-logo-mark {
+    width: 28px; height: 28px;
+    background: var(--gold);
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: var(--black);
+    font-weight: 900;
+    font-family: var(--font-display);
+    letter-spacing: 0;
+    flex-shrink: 0;
+}
+.topbar-room-name {
+    font-family: var(--font-display);
+    font-size: 18px;
+    letter-spacing: 0.08em;
+    color: var(--text-bright);
+    white-space: nowrap;
+}
+.topbar-room-name span {
+    color: var(--gold);
+}
+
+/* Divider */
+.topbar-sep {
+    width: 1px;
+    height: 20px;
+    background: var(--ash);
+    flex-shrink: 0;
+}
+
+/* Search */
+.topbar-search {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--charcoal);
+    border: 1px solid var(--smoke);
+    border-radius: 4px;
+    padding: 0 12px;
+    height: 32px;
+    max-width: 480px;
+    transition: border-color var(--trans);
+}
+.topbar-search:focus-within {
+    border-color: var(--gold-dark);
+    background: var(--pit);
+}
+.topbar-search i { color: var(--text-dim); font-size: 12px; flex-shrink: 0; }
+.topbar-search input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text-bright);
+    font-family: var(--font-body);
+    font-size: 13px;
+}
+.topbar-search input::placeholder { color: var(--text-dim); }
+
+/* Right controls */
+.topbar-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.ctrl-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    height: 30px;
+    padding: 0 10px;
+    border-radius: var(--radius);
+    border: 1px solid var(--smoke);
+    background: transparent;
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all var(--trans);
+    white-space: nowrap;
+}
+.ctrl-btn:hover {
+    border-color: var(--ash);
+    color: var(--text-main);
+    background: var(--charcoal);
+}
+.ctrl-btn i { font-size: 11px; }
+
+.ctrl-btn-gold {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--black);
+    font-weight: 600;
+}
+.ctrl-btn-gold:hover {
+    background: var(--gold-light);
+    border-color: var(--gold-light);
+    color: var(--black);
+    box-shadow: 0 0 16px var(--gold-glow);
+}
+
+.ctrl-btn-ghost {
+    border-color: transparent;
+    width: 30px; padding: 0;
+    justify-content: center;
+}
+
+/* Avatar in topbar */
+.topbar-avatar {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--smoke);
+    overflow: hidden;
+    cursor: pointer;
+    transition: border-color var(--trans);
+    background: var(--charcoal);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--text-dim); font-size: 11px;
+}
+.topbar-avatar:hover { border-color: var(--gold-dark); }
+.topbar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Live preview */
+#room-local-preview {
+    width: 72px; height: 42px;
+    background: var(--charcoal);
+    border-radius: var(--radius);
+    border: 1px solid var(--smoke);
+    object-fit: cover;
+    display: none;
+}
+
+/* ══════════════════════════════════════
+   MAIN CONTENT — Player side
+══════════════════════════════════════ */
+.cinema-main {
+    grid-column: 1;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--black);
+    position: relative;
+}
+
+/* ── Video Stage ── */
+.cinema-stage {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    background: var(--black);
+}
+
+/* Cinematic letterbox bars */
+.cinema-stage::before,
+.cinema-stage::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 0px;
+    background: var(--black);
+    z-index: 5;
+    transition: height var(--trans-slow);
+    pointer-events: none;
+}
+.cinema-stage::before { top: 0; }
+.cinema-stage::after  { bottom: 0; }
+.cinema-stage.letterbox::before,
+.cinema-stage.letterbox::after { height: 40px; }
+
+.room-video-container {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: var(--black);
+}
+
+/* Placeholder */
+.room-video-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: var(--black);
+}
+
+.placeholder-icon {
+    position: relative;
+}
+.placeholder-icon i {
+    font-size: 56px;
+    color: var(--smoke);
+}
+/* Gold shimmer ring */
+@keyframes ring-pulse {
+    0%, 100% { transform: scale(1); opacity: 0.15; }
+    50% { transform: scale(1.08); opacity: 0.3; }
+}
+.placeholder-ring {
+    position: absolute;
+    inset: -16px;
+    border-radius: 50%;
+    border: 1px solid var(--gold);
+    animation: ring-pulse 3s ease-in-out infinite;
+}
+.placeholder-ring-2 {
+    position: absolute;
+    inset: -28px;
+    border-radius: 50%;
+    border: 1px solid var(--gold);
+    animation: ring-pulse 3s ease-in-out infinite 1s;
+}
+
+.placeholder-text {
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--text-ghost);
+    text-transform: uppercase;
+}
+.placeholder-hint {
+    font-size: 12px;
+    color: var(--text-ghost);
+    font-family: var(--font-mono);
+}
+
+/* ── Platforms Row ── */
+.cinema-platforms {
+    padding: 10px 14px;
+    border-top: 1px solid var(--charcoal);
+    background: var(--void);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow-x: auto;
+    flex-shrink: 0;
+}
+.cinema-platforms::-webkit-scrollbar { height: 0; }
+
+.platforms-label {
+    font-family: var(--font-display);
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    color: var(--text-dim);
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-right: 4px;
+}
+
+.platform-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 14px;
+    border-radius: 6px;
+    border: 1px solid var(--smoke);
+    background: transparent;
+    cursor: pointer;
+    transition: all var(--trans);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.platform-pill:hover {
+    border-color: var(--gold-dark);
+    background: rgba(212,168,67,0.06);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.platform-pill-icon {
+    width: 32px; height: 32px;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; color: #fff;
+    overflow: hidden;
+    flex-shrink: 0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.platform-pill-icon img { width: 100%; height: 100%; object-fit: contain; padding: 4px; }
+.pf-netflix  { background: #e50914; }
+.pf-disney   { background: #001e62; }
+.pf-prime    { background: #00a8e0; }
+.pf-hulu     { background: #1ce783; }
+.pf-hbo      { background: #5822b4; }
+.pf-anime    { background: linear-gradient(135deg,#f97316,#ef4444); }
+.pf-custom   { background: var(--smoke); border:1px solid var(--ash); }
+.pf-more     { background: var(--charcoal); }
+
+.platform-pill-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    letter-spacing: 0.04em;
+}
+.platform-pill:hover .platform-pill-name { color: var(--text-main); }
+
+/* ══════════════════════════════════════
+   RIGHT PANEL — Chat & Members
+══════════════════════════════════════ */
+.cinema-panel {
+    grid-column: 2;
+    grid-row: 2;
+    display: flex;
+    flex-direction: column;
+    background: var(--void);
+    border-left: 1px solid var(--charcoal);
+    overflow: hidden;
+    position: relative;
+}
+
+/* Subtle top gold line */
+.cinema-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dark), transparent);
+    opacity: 0.5;
+}
+
+/* Tabs */
+.panel-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--charcoal);
+    flex-shrink: 0;
+}
+.panel-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 38px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 0.1em;
+    color: var(--text-dim);
+    position: relative;
+    transition: color var(--trans);
+}
+.panel-tab::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 20%; right: 20%;
+    height: 1.5px;
+    background: var(--gold);
+    opacity: 0;
+    transition: opacity var(--trans);
+}
+.panel-tab.active { color: var(--gold); }
+.panel-tab.active::after { opacity: 1; }
+.panel-tab:hover:not(.active) { color: var(--text-main); }
+.panel-tab i { font-size: 11px; }
+
+/* Tab content */
+.panel-view {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.panel-view.hidden { display: none; }
+
+/* ── Chat messages ── */
+.chat-message {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+}
+.chat-ava {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: var(--charcoal);
+    border: 1px solid var(--smoke);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--text-dim);
+}
+.chat-ava img { width: 100%; height: 100%; object-fit: cover; }
+
+.chat-body { flex: 1; min-width: 0; }
+.chat-meta {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 2px;
+}
+.chat-name {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--gold);
+    letter-spacing: 0.04em;
+}
+.chat-name.host { color: var(--amber); }
+.chat-name.system { color: var(--blue-accent); }
+.chat-time {
+    font-size: 9px;
+    color: var(--text-ghost);
+    font-family: var(--font-mono);
+}
+.chat-text {
+    font-size: 12.5px;
+    color: var(--text-main);
+    line-height: 1.45;
+    word-break: break-word;
+}
+
+/* Timestamp divider */
+.chat-divider {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--text-ghost);
+    padding: 4px 0;
+    position: relative;
+}
+.chat-divider::before, .chat-divider::after {
+    content: '';
+    position: absolute;
+    top: 50%; width: 25%;
+    height: 1px;
+    background: var(--charcoal);
+}
+.chat-divider::before { left: 0; }
+.chat-divider::after  { right: 0; }
+
+/* ── Chat input ── */
+.panel-input-wrap {
+    padding: 10px;
+    border-top: 1px solid var(--charcoal);
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+.panel-input {
+    flex: 1;
+    background: var(--charcoal);
+    border: 1px solid var(--smoke);
+    border-radius: 3px;
+    padding: 7px 10px;
+    color: var(--text-bright);
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    outline: none;
+    transition: border-color var(--trans);
+    resize: none;
+}
+.panel-input:focus { border-color: var(--gold-dark); }
+.panel-input::placeholder { color: var(--text-ghost); font-size: 12px; }
+
+.panel-send {
+    width: 32px; height: 32px;
+    border-radius: 3px;
+    background: var(--gold);
+    border: none;
+    color: var(--black);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: all var(--trans);
+    flex-shrink: 0;
+    align-self: flex-end;
+}
+.panel-send:hover {
+    background: var(--gold-light);
+    box-shadow: 0 0 12px var(--gold-glow);
+    transform: scale(1.05);
+}
+
+/* ── Members list ── */
+.member-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    border-radius: var(--radius);
+    transition: background var(--trans);
+}
+.member-item:hover { background: var(--charcoal); }
+.member-ava {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1.5px solid var(--smoke);
+    overflow: hidden;
+    flex-shrink: 0;
+    background: var(--charcoal);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: var(--text-dim);
+}
+.member-ava img { width: 100%; height: 100%; object-fit: cover; }
+.member-name {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: var(--text-main);
+    flex: 1;
+}
+.member-badge {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 2px;
+    background: rgba(212,168,67,0.12);
+    border: 1px solid var(--gold-dark);
+    color: var(--gold);
+    letter-spacing: 0.06em;
+}
+
+/* ══════════════════════════════════════
+   SETTINGS DRAWER
+══════════════════════════════════════ */
+.settings-drawer {
+    position: fixed;
+    top: var(--topbar-h);
+    right: calc(-320px);
+    width: 300px;
+    bottom: 0;
+    background: var(--pit);
+    border-left: 1px solid var(--charcoal);
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    transition: right var(--trans-slow);
+}
+.settings-drawer.open { right: 0; }
+.settings-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--charcoal);
+    flex-shrink: 0;
+}
+.settings-head h2 {
+    font-family: var(--font-display);
+    font-size: 16px;
+    letter-spacing: 0.12em;
+    color: var(--text-bright);
+}
+.settings-close {
+    width: 26px; height: 26px;
+    border-radius: var(--radius);
+    border: 1px solid var(--smoke);
+    background: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: all var(--trans);
+}
+.settings-close:hover { border-color: var(--gold-dark); color: var(--gold); }
+
+.settings-body { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 20px; }
+.settings-section-title {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+.settings-input {
+    width: 100%;
+    background: var(--charcoal);
+    border: 1px solid var(--smoke);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    color: var(--text-bright);
+    font-family: var(--font-body);
+    font-size: 13px;
+    outline: none;
+    transition: border-color var(--trans);
+}
+.settings-input:focus { border-color: var(--gold-dark); }
+.settings-bg-swatches {
+    display: flex; gap: 6px; flex-wrap: wrap;
+}
+.swatch {
+    width: 44px; height: 34px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--smoke);
+    cursor: pointer;
+    transition: all var(--trans);
+}
+.swatch:hover { transform: scale(1.05); border-color: var(--ash); }
+.swatch.active { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold-dark); }
+
+.settings-footer {
+    padding: 14px 16px;
+    border-top: 1px solid var(--charcoal);
+    display: flex; flex-direction: column; gap: 6px;
+}
+.settings-link {
+    font-size: 11px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: color var(--trans);
+}
+.settings-link:hover { color: var(--gold-dark); }
+
+/* ══════════════════════════════════════
+   MODALS
+══════════════════════════════════════ */
+.cinema-modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.85);
+    backdrop-filter: blur(4px);
+    z-index: 500;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px;
+}
+.cinema-modal-overlay.hidden { display: none; }
+
+.cinema-modal {
+    background: var(--pit);
+    border: 1px solid var(--charcoal);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+/* Top gold line */
+.cinema-modal::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 15%; right: 15%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.modal-close {
+    position: absolute;
+    top: 12px; right: 14px;
+    font-size: 16px;
+    color: var(--text-dim);
+    cursor: pointer;
+    transition: color var(--trans);
+}
+.modal-close:hover { color: var(--text-main); }
+
+.modal-icon-wrap {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--gold-dark);
+    background: rgba(212,168,67,0.08);
+    color: var(--gold);
+    font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 16px;
+}
+.cinema-modal h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    letter-spacing: 0.1em;
+    color: var(--text-bright);
+    text-align: center;
+    margin-bottom: 8px;
+}
+.cinema-modal p {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+/* Invite code display */
+.invite-code-block {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--charcoal);
+    border: 1px solid var(--gold-dark);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin: 16px 0;
+}
+.invite-code-val {
+    font-family: var(--font-display);
+    font-size: 28px;
+    letter-spacing: 0.3em;
+    color: var(--gold);
+    flex: 1;
+    text-align: center;
+}
+.invite-copy-btn {
+    width: 32px; height: 32px;
+    border-radius: var(--radius);
+    border: 1px solid var(--gold-dark);
+    background: rgba(212,168,67,0.1);
+    color: var(--gold);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: all var(--trans);
+    flex-shrink: 0;
+}
+.invite-copy-btn:hover { background: rgba(212,168,67,0.2); }
+
+/* Upgrade modal pricing */
+.upgrade-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin: 12px 0;
+}
+.upgrade-card {
+    background: var(--charcoal);
+    border: 1px solid var(--smoke);
+    border-radius: var(--radius);
+    padding: 12px 10px;
+    text-align: center;
+    position: relative;
+}
+.upgrade-card.popular {
+    border-color: var(--gold-dark);
+    background: rgba(212,168,67,0.05);
+}
+.upgrade-popular-badge {
+    position: absolute;
+    top: -1px; left: 50%; transform: translateX(-50%);
+    background: var(--gold);
+    color: var(--black);
+    font-size: 8px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    padding: 2px 8px;
+    border-radius: 0 0 4px 4px;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+.upgrade-plan-name {
+    font-family: var(--font-display);
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    color: var(--text-bright);
+    margin-bottom: 4px;
+}
+.upgrade-price {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--gold);
+    letter-spacing: 0.05em;
+}
+.upgrade-price span { font-size: 10px; color: var(--text-dim); font-family: var(--font-body); }
+.upgrade-features {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin: 8px 0;
+    line-height: 1.7;
+}
+.upgrade-btn {
+    width: 100%;
+    padding: 6px;
+    border-radius: var(--radius);
+    border: 1px solid var(--smoke);
+    background: none;
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: var(--font-body);
+    cursor: pointer;
+    transition: all var(--trans);
+}
+.upgrade-btn:hover { border-color: var(--ash); color: var(--text-main); }
+.upgrade-btn.primary {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: var(--black);
+    font-weight: 600;
+}
+.upgrade-btn.primary:hover { background: var(--gold-light); }
+
+/* Download link */
+.cinema-dl-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--gold);
+    color: var(--black);
+    border-radius: var(--radius);
+    font-weight: 600;
+    font-size: 13px;
+    text-decoration: none;
+    transition: all var(--trans);
+}
+.cinema-dl-link:hover { background: var(--gold-light); box-shadow: 0 0 20px var(--gold-glow); }
+
+/* Mic level bar */
+.mic-level-wrap { flex-shrink: 0; }
+.mic-bar {
+    width: 3px;
+    height: 24px;
+    background: var(--smoke);
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 0 auto;
+}
+.mic-fill {
+    height: 0%;
+    width: 100%;
+    background: var(--gold);
+    border-radius: 3px;
+    transition: height 0.05s linear;
+    margin-top: auto;
+}
+
+/* ── Notification toast ── */
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.cinema-toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: var(--charcoal);
+    border: 1px solid var(--gold-dark);
+    border-radius: var(--radius);
+    padding: 8px 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--gold);
+    z-index: 9998;
+    animation: toastIn 0.2s ease both;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.cinema-app { animation: fadeIn 0.4s ease both; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    :root { --panel-w: 0px; }
+    .cinema-panel { display: none; }
+    .cinema-app { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="cinema-app" id="room-app">
+
+    <!-- ══ TOP BAR ══ -->
+    <header class="cinema-topbar">
+        <div class="topbar-brand">
+            <div class="topbar-logo-mark">W4P</div>
+            <div class="topbar-room-name" id="room-name-display">
+                <span id="room-name-text">—</span>
+            </div>
+            <!-- Room code badge -->
+            <div id="topbar-room-code-wrap" style="display:none;align-items:center;gap:6px;">
+                <div style="width:1px;height:16px;background:var(--ash);flex-shrink:0;"></div>
+                <span style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.12em;color:var(--text-dim);">CODE</span>
+                <span id="topbar-room-code" style="font-family:var(--font-mono);font-size:11px;font-weight:500;letter-spacing:0.18em;color:var(--gold);background:rgba(212,168,67,0.1);border:1px solid var(--gold-dark);border-radius:4px;padding:2px 8px;cursor:pointer;" onclick="roomShowInvite()" title="Click to share invite code"></span>
+            </div>
+            <!-- Platform badge -->
+            <div id="topbar-platform-wrap" style="display:none;align-items:center;gap:6px;">
+                <div style="width:1px;height:16px;background:var(--ash);flex-shrink:0;"></div>
+                <span id="topbar-platform-badge" style="font-family:var(--font-mono);font-size:10px;letter-spacing:0.1em;color:var(--text-dim);background:var(--charcoal);border:1px solid var(--smoke);border-radius:4px;padding:2px 8px;"></span>
+            </div>
+            <!-- Host badge -->
+            <div id="topbar-host-badge" style="display:none;background:rgba(212,168,67,0.12);border:1px solid var(--gold-dark);border-radius:4px;padding:2px 8px;font-family:var(--font-mono);font-size:9px;letter-spacing:0.12em;color:var(--gold);">HOST</div>
+        </div>
+
+        <div class="topbar-sep"></div>
+
+        <!-- User info chip -->
+        <div id="topbar-user-wrap" style="display:none;align-items:center;gap:7px;flex-shrink:0;">
+            <div id="topbar-user-avatar" style="width:26px;height:26px;border-radius:50%;overflow:hidden;border:1.5px solid var(--smoke);flex-shrink:0;background:var(--charcoal);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text-dim);"></div>
+            <span style="font-family:var(--font-mono);font-size:11px;color:var(--text-main);letter-spacing:0.06em;" id="topbar-username-display"></span>
+        </div>
+        <div id="topbar-user-sep" style="display:none;width:1px;height:20px;background:var(--ash);flex-shrink:0;"></div>
+
+        <div class="topbar-search">
+            <i class="fa-brands fa-youtube"></i>
+            <input type="text" id="room-search-input" placeholder="Paste YouTube link or search...">
+            <i class="fa-solid fa-magnifying-glass" id="room-search-btn" style="cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color=''"></i>
+        </div>
+
+        <div class="topbar-controls">
+            <video id="room-local-preview" autoplay playsinline muted></video>
+
+            <button class="ctrl-btn" id="room-btn-cam" onclick="roomToggleCamera()" title="Camera">
+                <i class="fa-solid fa-camera"></i>
+            </button>
+            <button class="ctrl-btn" id="room-btn-mic" onclick="roomToggleMic()" title="Microphone">
+                <i class="fa-solid fa-microphone"></i>
+            </button>
+
+            <div class="mic-level-wrap" id="room-mic-level-wrap" style="display:none;">
+                <div class="mic-bar">
+                    <div class="mic-fill" id="room-mic-level-fill"></div>
+                </div>
+            </div>
+
+            <div class="topbar-sep"></div>
+
+            <button class="ctrl-btn" onclick="roomShowInvite()" title="Invite">
+                <i class="fa-solid fa-user-plus"></i> Invite
+            </button>
+            <button class="ctrl-btn ctrl-btn-gold" onclick="roomShowUpgradeModal()">
+                <i class="fa-solid fa-bolt"></i> Upgrade
+            </button>
+            <button class="ctrl-btn ctrl-btn-ghost" onclick="roomShowSettings()" title="Settings">
+                <i class="fa-solid fa-gear"></i>
+            </button>
+            <button class="ctrl-btn ctrl-btn-ghost" onclick="roomShowHelp()" title="Help">
+                <i class="fa-solid fa-question"></i>
+            </button>
+            <div class="topbar-avatar room-sidebar-avatar-login" id="room-sidebar-avatar" onclick="roomShowLoginModal()" title="Login / Profile">
+                <i class="fa-solid fa-user"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- ══ MAIN PLAYER ══ -->
+    <main class="cinema-main">
+        <div class="cinema-stage" id="cinema-stage">
+            <div class="room-video-container" id="room-video-container">
+                <div id="room-player-placeholder" class="room-video-placeholder">
+                    <div class="placeholder-icon">
+                        <i class="fa-solid fa-film"></i>
+                        <div class="placeholder-ring"></div>
+                        <div class="placeholder-ring-2"></div>
+                    </div>
+                    <div class="placeholder-text">SCREEN IS EMPTY</div>
+                    <div class="placeholder-hint">paste a youtube link above to start watching</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Platforms strip -->
+        <div class="cinema-platforms">
+            <span class="platforms-label">PLATFORMS</span>
+
+            <div class="platform-pill room-platform-card" data-platform="netflix">
+                <div class="platform-pill-icon pf-netflix">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg" alt="N" onerror="this.style.display='none'">
+                </div>
+                <span class="platform-pill-name">Netflix</span>
+            </div>
+            <div class="platform-pill room-platform-card" data-platform="disney">
+                <div class="platform-pill-icon pf-disney">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/3/3e/Disney%2B_logo.svg" alt="D+" onerror="this.style.display='none'">
+                </div>
+                <span class="platform-pill-name">Disney+</span>
+            </div>
+            <div class="platform-pill room-platform-card" data-platform="prime">
+                <div class="platform-pill-icon pf-prime">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/9/90/Prime_Video_logo_%282024%29.svg" alt="P" onerror="this.style.display='none'">
+                </div>
+                <span class="platform-pill-name">Prime</span>
+            </div>
+            <div class="platform-pill room-platform-card" data-platform="hulu">
+                <div class="platform-pill-icon pf-hulu">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/f/f9/Hulu_logo_%282018%29.svg" alt="H" onerror="this.style.display='none'">
+                </div>
+                <span class="platform-pill-name">Hulu</span>
+            </div>
+            <div class="platform-pill room-platform-card" data-platform="hbomax">
+                <div class="platform-pill-icon pf-hbo">
+                    <img src="https://upload.wikimedia.org/wikipedia/commons/1/17/HBO_Max_Logo.svg" alt="HBO" onerror="this.style.display='none'">
+                </div>
+                <span class="platform-pill-name">HBO Max</span>
+            </div>
+            <div class="platform-pill room-platform-card" data-platform="anime">
+                <div class="platform-pill-icon pf-anime"><i class="fa-solid fa-dragon" style="font-size:9px;"></i></div>
+                <span class="platform-pill-name">Anime</span>
+            </div>
+            <div class="platform-pill room-platform-card" data-platform="custom" id="room-platform-custom-link">
+                <div class="platform-pill-icon pf-custom"><i class="fa-solid fa-link" style="font-size:9px;color:var(--text-dim);"></i></div>
+                <span class="platform-pill-name">Custom</span>
+            </div>
+            <div class="platform-pill room-platform-card" id="room-platform-viewall">
+                <div class="platform-pill-icon pf-more"><i class="fa-solid fa-ellipsis" style="font-size:9px;color:var(--text-dim);"></i></div>
+                <span class="platform-pill-name">+50 more</span>
+            </div>
+        </div>
+    </main>
+
+    <!-- ══ RIGHT PANEL ══ -->
+    <aside class="cinema-panel">
+        <div class="panel-tabs">
+            <button class="panel-tab active room-tab" data-tab="chat">
+                <i class="fa-solid fa-comment"></i> CHAT
+            </button>
+            <button class="panel-tab room-tab" data-tab="members">
+                <i class="fa-solid fa-users"></i> MEMBERS
+            </button>
+        </div>
+
+        <!-- Chat view -->
+        <div class="panel-view room-tab-content" id="room-chat-view">
+            <div class="room-chat-messages" id="room-chat-messages"></div>
+        </div>
+
+        <!-- Members view -->
+        <div class="panel-view room-tab-content hidden" id="room-members-view">
+            <div class="room-members-list" id="room-members-list"></div>
+        </div>
+
+        <!-- Chat input -->
+        <div class="panel-input-wrap">
+            <input type="text" class="panel-input room-chat-input" id="room-chat-input" placeholder="Say something...">
+            <button class="panel-send" onclick="roomSendMessage()" id="room-chat-send-btn">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </aside>
+</div>
+
+<!-- ══ SETTINGS DRAWER ══ -->
+<div class="settings-drawer room-settings-pane" id="room-settings-pane">
+    <div class="settings-head">
+        <h2>SETTINGS</h2>
+        <button class="settings-close" onclick="roomCloseSettings()">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+    </div>
+    <div class="settings-body">
+        <div>
+            <div class="settings-section-title">Room Name</div>
+            <input type="text" class="settings-input room-settings-input" id="room-settings-name" placeholder="My Watch Room">
+        </div>
+        <div>
+            <div class="settings-section-title">Background Color</div>
+            <div class="settings-bg-swatches room-settings-bg-options">
+                <div class="swatch room-settings-bg-opt active" style="background:#000000;" data-color="#000000"></div>
+                <div class="swatch room-settings-bg-opt" style="background:#0a0a0a;" data-color="#0a0a0a"></div>
+                <div class="swatch room-settings-bg-opt" style="background:#0d0d1a;" data-color="#0d0d1a"></div>
+                <div class="swatch room-settings-bg-opt" style="background:#0d1a0d;" data-color="#0d1a0d"></div>
+                <div class="swatch room-settings-bg-opt" style="background:#1a0d0d;" data-color="#1a0d0d"></div>
+                <input type="color" class="room-settings-color" value="#000000" style="width:44px;height:34px;border-radius:6px;border:1.5px solid var(--smoke);cursor:pointer;background:var(--charcoal);">
+            </div>
+        </div>
+        <div>
+            <div class="settings-section-title">Background Image</div>
+            <button class="ctrl-btn room-settings-upload-btn" style="width:100%;justify-content:center;">
+                <i class="fa-solid fa-image"></i> Upload Image
+            </button>
+        </div>
+        <div>
+            <div class="settings-section-title">Chat Color</div>
+            <input type="color" class="room-settings-color" value="#d4a843" style="width:100%;height:34px;border-radius:6px;border:1.5px solid var(--smoke);cursor:pointer;background:var(--charcoal);">
+        </div>
+        <div>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text-main);cursor:pointer;">
+                <input type="checkbox" class="room-settings-checkbox" style="accent-color:var(--gold);">
+                Letterbox mode
+            </label>
+        </div>
+    </div>
+    <div class="settings-footer">
+        <a href="#" class="settings-link">Privacy Policy</a>
+        <a href="#" class="settings-link">Terms of Service</a>
+        <a href="#" class="settings-link">Report a Bug</a>
+    </div>
+</div>
+
+<!-- ══ MODALS ══ -->
+
+<!-- Platform App Required -->
+<div class="cinema-modal-overlay hidden" id="room-platform-app-modal">
+    <div class="cinema-modal">
+        <span class="modal-close" id="room-platform-app-modal-close" onclick="document.getElementById('room-platform-app-modal').classList.add('hidden')">&times;</span>
+        <div class="modal-icon-wrap"><i class="fa-solid fa-desktop"></i></div>
+        <h3>APP REQUIRED</h3>
+        <p id="room-platform-app-modal-text">To use this platform, please download the Watch4Party desktop app.</p>
+        <div class="modal-actions">
+            <a href="../../index.html#download" class="cinema-dl-link">
+                <i class="fa-brands fa-windows"></i> Download App
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Long Video -->
+<div class="cinema-modal-overlay hidden" id="room-long-video-modal">
+    <div class="cinema-modal">
+        <span class="modal-close" onclick="document.getElementById('room-long-video-modal').classList.add('hidden')">&times;</span>
+        <div class="modal-icon-wrap"><i class="fa-solid fa-clock"></i></div>
+        <h3>LONG VIDEO</h3>
+        <p>Videos over 2 hours require the desktop app for uninterrupted playback.</p>
+        <div class="modal-actions">
+            <a href="../../index.html#download" class="cinema-dl-link"><i class="fa-brands fa-windows"></i> Get the App</a>
+        </div>
+    </div>
+</div>
+
+<!-- Invite Modal -->
+<div class="cinema-modal-overlay hidden" id="room-invite-modal">
+    <div class="cinema-modal">
+        <span class="modal-close" onclick="document.getElementById('room-invite-modal').classList.add('hidden')">&times;</span>
+        <h3>INVITE FRIENDS</h3>
+        <p>Share this code with friends to join your watch party.</p>
+        <div class="invite-code-block">
+            <div class="invite-code-val" id="room-invite-code-display">——</div>
+            <button class="invite-copy-btn" onclick="roomCopyInviteCode()"><i class="fa-solid fa-copy"></i></button>
+        </div>
+        <p style="font-size:11px;">Or share the link:</p>
+        <input type="text" class="settings-input" id="room-invite-link" readonly style="font-family:var(--font-mono);font-size:11px;color:var(--text-dim);">
+    </div>
+</div>
+
+<!-- Help Modal -->
+<div class="cinema-modal-overlay hidden" id="room-help-modal">
+    <div class="cinema-modal">
+        <span class="modal-close" onclick="document.getElementById('room-help-modal').classList.add('hidden')">&times;</span>
+        <h3>HELP</h3>
+        <p>Paste a YouTube link in the search bar to start watching. Use room codes to invite friends. For Netflix, Disney+, and other platforms, download the desktop app.</p>
+        <div class="modal-actions">
+            <button class="ctrl-btn" onclick="document.getElementById('room-help-modal').classList.add('hidden')">Got it</button>
+        </div>
+    </div>
+</div>
+
+<!-- Login Modal -->
+<div class="cinema-modal-overlay hidden room-login-modal" id="room-login-modal">
+    <div class="cinema-modal room-login-modal-box">
+        <span class="modal-close" onclick="document.getElementById('room-login-modal').classList.add('hidden')">&times;</span>
+        <h3>LOGIN</h3>
+        <p>Sign in to save your watch history and access premium features.</p>
+        <div class="modal-actions">
+            <a href="../../login/index.html" class="cinema-dl-link" style="font-size:13px;">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Upgrade Modal -->
+<div class="cinema-modal-overlay hidden" id="room-upgrade-modal">
+    <div class="cinema-modal" style="max-width:580px;">
+        <span class="modal-close" onclick="document.getElementById('room-upgrade-modal').classList.add('hidden')">&times;</span>
+        <h3>UPGRADE YOUR EXPERIENCE</h3>
+        <p>Unlock premium features for the ultimate watch party.</p>
+        <div class="upgrade-grid">
+            <div class="upgrade-card">
+                <div class="upgrade-plan-name">STARTER</div>
+                <div class="upgrade-price">$0<span>/mo</span></div>
+                <div class="upgrade-features">1080p · Public Rooms<br>Standard Sync</div>
+                <button class="upgrade-btn" disabled>Current</button>
+            </div>
+            <div class="upgrade-card popular">
+                <div class="upgrade-popular-badge">POPULAR</div>
+                <div class="upgrade-plan-name">PRO</div>
+                <div class="upgrade-price">$9.99<span>/mo</span></div>
+                <div class="upgrade-features">1440p · Private Rooms<br>Priority Servers · No Ads</div>
+                <button class="upgrade-btn primary" onclick="alert('Please use the Desktop App to subscribe.')">Upgrade</button>
+            </div>
+            <div class="upgrade-card">
+                <div class="upgrade-plan-name">ULTIMATE</div>
+                <div class="upgrade-price">$19.99<span>/mo</span></div>
+                <div class="upgrade-features">4K HDR · Unlimited<br>Early Access</div>
+                <button class="upgrade-btn" onclick="alert('Please use the Desktop App to subscribe.')">Upgrade</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══ JAVASCRIPT ══ -->
+<script>
+(function() {
+    /* ─── Helpers ─── */
+    function qs(sel, ctx) { return (ctx || document).querySelector(sel); }
+    function showToast(msg, duration) {
+        var existing = document.querySelector('.cinema-toast');
+        if (existing) existing.remove();
+        var t = document.createElement('div');
+        t.className = 'cinema-toast';
+        t.textContent = msg;
+        document.body.appendChild(t);
+        setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, duration || 2000);
+    }
+
+    /* ─── Storage helpers ─── */
+    var STORAGE_KEY = 'watch4party_rooms';
+    var CHAT_KEY_PREFIX = 'watch4party_chat_';
+
+    function getRooms() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(_) { return {}; }
+    }
+    function roomSaveChat(code, msgs) {
+        try { localStorage.setItem(CHAT_KEY_PREFIX + code, JSON.stringify(msgs)); } catch(_) {}
+    }
+    function roomLoadChat(code) {
+        try { return JSON.parse(localStorage.getItem(CHAT_KEY_PREFIX + code)) || []; } catch(_) { return []; }
+    }
+
+    /* ─── Global expose ─── */
+    window.roomShowInvite    = function() { var m = document.getElementById('room-invite-modal'); if(m) m.classList.remove('hidden'); };
+    window.roomShowSettings  = function() { var d = document.getElementById('room-settings-pane'); if(d) d.classList.add('open'); };
+    window.roomCloseSettings = function() { var d = document.getElementById('room-settings-pane'); if(d) d.classList.remove('open'); };
+    window.roomShowHelp      = function() { var m = document.getElementById('room-help-modal'); if(m) m.classList.remove('hidden'); };
+    window.roomShowUpgradeModal = function() { var m = document.getElementById('room-upgrade-modal'); if(m) m.classList.remove('hidden'); };
+    window.roomShowLoginModal   = function() { var m = document.getElementById('room-login-modal'); if(m) m.classList.remove('hidden'); };
+    window.roomShowPlatformAppModal = function() { var m = document.getElementById('room-platform-app-modal'); if(m) m.classList.remove('hidden'); };
+    window.roomShowLongVideoModal   = function() { var m = document.getElementById('room-long-video-modal'); if(m) m.classList.remove('hidden'); };
+
+    /* ─── Camera / Mic ─── */
+    var camStream = null;
+    var micStream = null;
+    var audioCtx = null, analyser = null, micSource = null;
+
+    window.roomToggleCamera = function() {
+        var btn = document.getElementById('room-btn-cam');
+        var preview = document.getElementById('room-local-preview');
+        if (!btn) return;
+        if (camStream) {
+            camStream.getTracks().forEach(function(t) { t.stop(); });
+            camStream = null;
+            if (preview) preview.style.display = 'none';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        } else {
+            navigator.mediaDevices.getUserMedia({ video: true }).then(function(s) {
+                camStream = s;
+                if (preview) { preview.srcObject = s; preview.style.display = 'block'; }
+                btn.style.color = 'var(--gold)';
+                btn.style.borderColor = 'var(--gold-dark)';
+            }).catch(function() { showToast('CAMERA ACCESS DENIED'); });
+        }
+    };
+
+    window.roomToggleMic = function() {
+        var btn = document.getElementById('room-btn-mic');
+        var wrap = document.getElementById('room-mic-level-wrap');
+        var fill = document.getElementById('room-mic-level-fill');
+        if (!btn) return;
+        if (micStream) {
+            micStream.getTracks().forEach(function(t) { t.stop(); });
+            micStream = null;
+            if (audioCtx) { try { audioCtx.close(); } catch(_){} audioCtx = null; }
+            if (wrap) wrap.style.display = 'none';
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        } else {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(function(s) {
+                micStream = s;
+                if (wrap) wrap.style.display = 'flex';
+                btn.style.color = 'var(--gold)';
+                btn.style.borderColor = 'var(--gold-dark)';
+                try {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioCtx.createAnalyser();
+                    analyser.fftSize = 256;
+                    micSource = audioCtx.createMediaStreamSource(s);
+                    micSource.connect(analyser);
+                    var buf = new Uint8Array(analyser.frequencyBinCount);
+                    (function tick() {
+                        if (!micStream) return;
+                        analyser.getByteFrequencyData(buf);
+                        var avg = buf.reduce(function(a,b){return a+b;},0) / buf.length;
+                        var pct = Math.min(100, (avg / 128) * 100);
+                        if (fill) fill.style.height = pct + '%';
+                        requestAnimationFrame(tick);
+                    })();
+                } catch(_) {}
+            }).catch(function() { showToast('MICROPHONE ACCESS DENIED'); });
+        }
+    };
+
+    /* ─── Chat ─── */
+    var chatClientId = Math.random().toString(36).slice(2);
+    var chatChannel = null;
+
+    window.roomSendMessage = function() {
+        /* Overridden in init() once room/user context is loaded */
+        var input = document.getElementById('room-chat-input');
+        if (!input) return;
+        var text = (input.value || '').trim();
+        if (!text) return;
+        input.value = '';
+        var code = new URLSearchParams(window.location.search).get('room') || new URLSearchParams(window.location.search).get('code') || '';
+        var displayName = '';
+        try { displayName = sessionStorage.getItem('watch4party_room_displayName') || ''; } catch(_) {}
+        var now = new Date();
+        var time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+        var msg = { time: time, user: displayName || 'Guest', text: text, clientId: chatClientId };
+        var msgs = roomLoadChat(code);
+        msgs.push(msg);
+        roomSaveChat(code, msgs);
+        renderChatMessage(msg);
+        if (chatChannel) try { chatChannel.postMessage(msg); } catch(_) {}
+    };
+
+    function renderChatMessage(msg) {
+        var container = document.getElementById('room-chat-messages');
+        if (!container) return;
+        var isSystem = msg.user === 'System';
+        var isHost = msg.isHost;
+        var div = document.createElement('div');
+        div.className = 'chat-message';
+        var avatarUrl = msg.avatar ? ('https://api.dicebear.com/9.x/avataaars/svg?seed=' + msg.avatar) : '';
+        div.innerHTML =
+            '<div class="chat-ava">' + (avatarUrl ? '<img src="' + avatarUrl + '" alt="">' : '<i class="fa-solid fa-user"></i>') + '</div>' +
+            '<div class="chat-body">' +
+                '<div class="chat-meta">' +
+                    '<span class="chat-name' + (isSystem ? ' system' : isHost ? ' host' : '') + '">' + escapeHtml(msg.user) + '</span>' +
+                    '<span class="chat-time">' + escapeHtml(msg.time) + '</span>' +
+                '</div>' +
+                '<div class="chat-text">' + escapeHtml(msg.text) + '</div>' +
+            '</div>';
+        container.appendChild(div);
+        var view = document.getElementById('room-chat-view');
+        if (view) view.scrollTop = view.scrollHeight;
+    }
+
+    function renderAllChat(msgs) {
+        var container = document.getElementById('room-chat-messages');
+        if (!container) return;
+        container.innerHTML = '';
+        msgs.forEach(renderChatMessage);
+    }
+
+    function escapeHtml(t) {
+        var d = document.createElement('div');
+        d.textContent = t;
+        return d.innerHTML;
+    }
+
+    /* ─── YouTube search / load ─── */
+    function roomHandleSearch(val) {
+        if (!val) return;
+        val = val.trim();
+        var ytMatch = val.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+        if (ytMatch) {
+            loadVideo(ytMatch[1]);
+        } else {
+            var q = encodeURIComponent(val);
+            window.open('https://www.youtube.com/results?search_query=' + q, '_blank');
+        }
+    }
+
+    function loadVideo(videoId) {
+        var container = document.getElementById('room-video-container');
+        if (!container) return;
+        container.innerHTML =
+            '<iframe id="room-yt-iframe" width="100%" height="100%" ' +
+            'src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0&modestbranding=1" ' +
+            'frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen ' +
+            'style="display:block;"></iframe>';
+    }
+    window.roomLoadVideo = loadVideo;
+
+    /* ─── Settings ─── */
+    function roomSettingsKey(code, key) { return 'watch4party_room_' + code + '_' + key; }
+    function roomSettingsPersonalKey(code, key) { return 'watch4party_personal_' + code + '_' + key; }
+
+    function initRoomSettings(code) {
+        var swatches = document.querySelectorAll('.swatch.room-settings-bg-opt');
+        swatches.forEach(function(s) {
+            s.addEventListener('click', function() {
+                swatches.forEach(function(x) { x.classList.remove('active'); });
+                s.classList.add('active');
+                var color = s.getAttribute('data-color');
+                if (color) {
+                    document.querySelector('.cinema-main').style.background = color;
+                    try { localStorage.setItem(roomSettingsKey(code, 'room_bg_color'), color); } catch(_) {}
+                }
+            });
+        });
+        var colorPicker = document.querySelector('.room-settings-color');
+        if (colorPicker) {
+            colorPicker.addEventListener('input', function() {
+                document.querySelector('.cinema-main').style.background = colorPicker.value;
+            });
+        }
+        var letterboxCb = document.querySelector('.room-settings-checkbox');
+        if (letterboxCb) {
+            letterboxCb.addEventListener('change', function() {
+                var stage = document.getElementById('cinema-stage');
+                if (stage) stage.classList.toggle('letterbox', letterboxCb.checked);
+            });
+        }
+    }
+
+    /* ─── Copy invite ─── */
+    window.roomCopyInviteCode = function() {
+        var codeEl = document.getElementById('room-invite-code-display');
+        var code = codeEl ? codeEl.textContent.trim() : '';
+        if (!code || code === '——') return;
+        navigator.clipboard.writeText(code).then(function() { showToast('CODE COPIED'); }).catch(function(){});
+    };
+
+    /* ─── Tab switching ─── */
+    document.querySelectorAll('.panel-tab.room-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            var id = tab.getAttribute('data-tab');
+            document.querySelectorAll('.panel-tab').forEach(function(t) { t.classList.remove('active'); });
+            document.querySelectorAll('.room-tab-content').forEach(function(c) { c.classList.add('hidden'); });
+            tab.classList.add('active');
+            var el = document.getElementById('room-' + id + '-view');
+            if (el) el.classList.remove('hidden');
+        });
+    });
+
+    /* ─── Platform cards ─── */
+    document.querySelectorAll('.room-platform-card[data-platform]').forEach(function(card) {
+        card.addEventListener('click', function() { window.roomShowPlatformAppModal(); });
+    });
+    var viewall = document.getElementById('room-platform-viewall');
+    if (viewall) viewall.addEventListener('click', function() { window.roomShowPlatformAppModal(); });
+
+    /* ─── Search ─── */
+    var searchInput = document.getElementById('room-search-input');
+    var searchBtn = document.getElementById('room-search-btn');
+    if (searchInput) searchInput.addEventListener('keypress', function(e) { if(e.key === 'Enter') roomHandleSearch(searchInput.value); });
+    if (searchBtn) searchBtn.addEventListener('click', function() { roomHandleSearch(searchInput && searchInput.value); });
+
+    /* ─── Chat enter key ─── */
+    var chatInput = document.getElementById('room-chat-input');
+    if (chatInput) chatInput.addEventListener('keypress', function(e) { if(e.key==='Enter') { e.preventDefault(); window.roomSendMessage(); } });
+
+    /* ─── Close modal on backdrop click ─── */
+    document.querySelectorAll('.cinema-modal-overlay').forEach(function(overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay && !overlay.getAttribute('data-no-close')) {
+                overlay.classList.add('hidden');
+            }
+        });
+    });
+
+    /* ─── Close settings on outside click ─── */
+    document.addEventListener('click', function(e) {
+        var drawer = document.getElementById('room-settings-pane');
+        if (drawer && drawer.classList.contains('open')) {
+            if (!drawer.contains(e.target) && !e.target.closest('[onclick*="roomShowSettings"]')) {
+                drawer.classList.remove('open');
+            }
+        }
+    });
+
+    /* ─── INIT ─── */
+    function init() {
+        var params = new URLSearchParams(window.location.search);
+        /* Support both ?room= (from room.php redirect) and ?code= */
+        var code = (params.get('room') || params.get('code') || '').toUpperCase();
+        var urlUser = params.get('user') || '';
+        var isHost = params.get('host') === '1';
+
+        /* Try sessionStorage (set by index.html join/create flow) */
+        var sessionRoom = null;
+        try { sessionRoom = JSON.parse(sessionStorage.getItem('w4p_room')); } catch(_) {}
+
+        /* Merge: URL params take precedence, then session */
+        var roomCode     = code || (sessionRoom && sessionRoom.code) || '';
+        var roomName     = (sessionRoom && sessionRoom.name) || '';
+        var roomPlatform = (sessionRoom && sessionRoom.platform) || '';
+        var username     = urlUser || (sessionRoom && (sessionRoom.username || sessionRoom.host)) || '';
+        var userIsHost   = isHost || (sessionRoom && sessionRoom.role === 'host') || false;
+
+        var rooms = getRooms();
+        var room = rooms[roomCode];
+        if (room) {
+            if (!roomName)     roomName     = room.name     || '';
+            if (!roomPlatform) roomPlatform = room.platform || '';
+        }
+
+        var displayName = username || '';
+        try {
+            if (!displayName) displayName = sessionStorage.getItem('watch4party_room_displayName') || '';
+            if (displayName)  sessionStorage.setItem('watch4party_room_displayName', displayName);
+        } catch(_) {}
+
+        /* ── Topbar: Room name ── */
+        var nameEl = document.getElementById('room-name-text');
+        if (nameEl) nameEl.textContent = roomName ? roomName.toUpperCase() : (roomCode || '—');
+
+        /* ── Topbar: Room code badge ── */
+        var codeWrap = document.getElementById('topbar-room-code-wrap');
+        var codeEl   = document.getElementById('topbar-room-code');
+        if (roomCode && codeWrap && codeEl) {
+            codeEl.textContent = roomCode;
+            codeWrap.style.display = 'flex';
+        }
+
+        /* ── Topbar: Platform badge ── */
+        var pfWrap  = document.getElementById('topbar-platform-wrap');
+        var pfBadge = document.getElementById('topbar-platform-badge');
+        if (roomPlatform && pfWrap && pfBadge) {
+            pfBadge.textContent = roomPlatform.toUpperCase();
+            pfWrap.style.display = 'flex';
+        }
+
+        /* ── Topbar: Host badge ── */
+        var hostBadge = document.getElementById('topbar-host-badge');
+        if (userIsHost && hostBadge) hostBadge.style.display = 'flex';
+
+        /* ── Topbar: User chip ── */
+        var userWrap    = document.getElementById('topbar-user-wrap');
+        var userSep     = document.getElementById('topbar-user-sep');
+        var userAvEl    = document.getElementById('topbar-user-avatar');
+        var userNameEl  = document.getElementById('topbar-username-display');
+        if (displayName && userWrap) {
+            if (userNameEl) userNameEl.textContent = displayName;
+            if (userAvEl)   userAvEl.innerHTML = '<img src="https://api.dicebear.com/9.x/avataaars/svg?seed=' + encodeURIComponent(displayName) + '" alt="" style="width:100%;height:100%;object-fit:cover;">';
+            userWrap.style.display = 'flex';
+            if (userSep) userSep.style.display = 'block';
+        }
+
+        /* ── Page title ── */
+        if (roomName) document.title = roomName + ' — Watch4Party';
+        else if (roomCode) document.title = 'Room ' + roomCode + ' — Watch4Party';
+
+        /* Invite */
+        var codeDisplay = document.getElementById('room-invite-code-display');
+        if (codeDisplay) codeDisplay.textContent = roomCode || '——';
+        var linkDisplay = document.getElementById('room-invite-link');
+        if (linkDisplay) linkDisplay.value = window.location.href;
+
+        /* Avatar (sidebar) */
+        var avatarBtn = document.getElementById('room-sidebar-avatar');
+        var currentUser = null;
+        try { currentUser = JSON.parse(localStorage.getItem('watch4party_currentUser')); } catch(_) {}
+        if (currentUser && avatarBtn) {
+            var avatarSeed = currentUser.avatar || currentUser.username || 'Felix';
+            avatarBtn.innerHTML = '<img src="https://api.dicebear.com/9.x/avataaars/svg?seed=' + avatarSeed + '" alt="">';
+            avatarBtn.classList.remove('room-sidebar-avatar-login');
+        } else if (displayName && avatarBtn) {
+            avatarBtn.innerHTML = '<img src="https://api.dicebear.com/9.x/avataaars/svg?seed=' + encodeURIComponent(displayName) + '" alt="">';
+            avatarBtn.classList.remove('room-sidebar-avatar-login');
+        }
+
+        /* Members */
+        var membersList = document.getElementById('room-members-list');
+        var members = (room && room.members) ? room.members : [];
+        if (!members.length && displayName) members = [{ name: displayName, isHost: userIsHost }];
+        if (membersList) {
+            membersList.innerHTML = '';
+            members.forEach(function(m) {
+                var li = document.createElement('div');
+                li.className = 'member-item';
+                var seed = m.avatar || m.name || 'Felix';
+                li.innerHTML =
+                    '<div class="member-ava"><img src="https://api.dicebear.com/9.x/avataaars/svg?seed=' + seed + '" alt=""></div>' +
+                    '<div class="member-name">' + escapeHtml(m.name) + '</div>' +
+                    (m.isHost ? '<div class="member-badge">HOST</div>' : '');
+                membersList.appendChild(li);
+            });
+        }
+
+        /* Platform pinned modal check (for platform codes) */
+        var PLATFORM_ROOM_CODES = { 'K7M2N9':1,'R4T8V1':1,'X3Y6Z2':1,'A9B5C7':1,'D1E4F8':1,'G2H6J3':1,'L5P0Q9':1 };
+        if (roomCode && PLATFORM_ROOM_CODES[roomCode]) {
+            var platformNames = { 'K7M2N9':'Netflix','R4T8V1':'Disney+','X3Y6Z2':'Prime Video','A9B5C7':'HBO Max','D1E4F8':'Hulu','G2H6J3':'Anime','L5P0Q9':'Custom' };
+            var platformName = platformNames[roomCode] || 'Premium';
+            var modalText = document.getElementById('room-platform-app-modal-text');
+            if (modalText) modalText.textContent = 'This is a ' + platformName + ' room. To join, please download the desktop app.';
+            var platformModal = document.getElementById('room-platform-app-modal');
+            if (platformModal) {
+                platformModal.setAttribute('data-no-close', '1');
+                var closeBtn = document.getElementById('room-platform-app-modal-close');
+                if (closeBtn) { closeBtn.style.display = 'none'; }
+                platformModal.classList.remove('hidden');
+            }
+        }
+
+        /* Chat init */
+        chatClientId = Math.random().toString(36).slice(2);
+        var msgs = roomLoadChat(roomCode);
+        if (!msgs.length) {
+            var welcomeMsg = { time: '--:--', user: 'System', text: (roomName ? roomName + ' — ' : '') + 'Welcome to the room! 🎬', isHost: false };
+            msgs = [welcomeMsg];
+            roomSaveChat(roomCode, msgs);
+        }
+        renderAllChat(msgs);
+
+        try {
+            chatChannel = new BroadcastChannel('watch4party_chat_' + roomCode);
+            chatChannel.onmessage = function(ev) {
+                var msg = ev.data;
+                if (!msg || !msg.time || !msg.user || !msg.text) return;
+                if (msg.clientId === chatClientId) return;
+                var list = roomLoadChat(roomCode);
+                list.push(msg);
+                roomSaveChat(roomCode, list);
+                renderChatMessage(msg);
+            };
+        } catch(_) {}
+
+        /* Override roomSendMessage to use correct code + username */
+        window.roomSendMessage = function() {
+            var input = document.getElementById('room-chat-input');
+            if (!input) return;
+            var text = (input.value || '').trim();
+            if (!text) return;
+            input.value = '';
+            var now = new Date();
+            var time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+            var msg = { time: time, user: displayName || 'Guest', text: text, clientId: chatClientId, isHost: userIsHost };
+            var list = roomLoadChat(roomCode);
+            list.push(msg);
+            roomSaveChat(roomCode, list);
+            renderChatMessage(msg);
+            if (chatChannel) try { chatChannel.postMessage(msg); } catch(_) {}
+        };
+
+        /* Settings */
+        initRoomSettings(roomCode);
+
+        /* Restore bg */
+        try {
+            var savedBg = localStorage.getItem('watch4party_room_' + roomCode + '_room_bg_color');
+            if (savedBg) document.querySelector('.cinema-main').style.background = savedBg;
+        } catch(_) {}
+    }
+
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+    else init();
+})();
+</script>
+
+</body>
+</html>

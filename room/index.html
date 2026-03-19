@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch4Party — Odaya Gir</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --black:      #000000;
+    --void:       #030303;
+    --pit:        #080808;
+    --charcoal:   #111111;
+    --smoke:      #252525;
+    --ash:        #333333;
+    --text-bright:#f5f0e8;
+    --text-main:  #c8c0b0;
+    --text-dim:   #706860;
+    --gold:       #d4a843;
+    --gold-light: #e8c060;
+    --gold-dark:  #9a7820;
+    --gold-glow:  rgba(212,168,67,0.25);
+    --red:        #e03030;
+    --green:      #30c060;
+    --font-display:'Bebas Neue',sans-serif;
+    --font-body:  'DM Sans',sans-serif;
+    --font-mono:  'JetBrains Mono',monospace;
+    --radius:     8px;
+    --trans:      0.2s cubic-bezier(0.4,0,0.2,1);
+}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+html,body{
+    min-height:100vh;
+    background:var(--black);
+    color:var(--text-main);
+    font-family:var(--font-body);
+    font-size:14px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    -webkit-font-smoothing:antialiased;
+}
+body::before{
+    content:'';
+    position:fixed;inset:0;z-index:0;pointer-events:none;
+    opacity:0.02;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:128px;
+}
+.page{
+    position:relative;z-index:1;
+    width:100%;max-width:440px;
+    margin:32px 16px;
+}
+
+/* ── Logo ── */
+.logo{
+    display:flex;align-items:center;gap:12px;
+    justify-content:center;margin-bottom:36px;
+}
+.logo-mark{
+    width:38px;height:38px;
+    background:var(--gold);
+    clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    display:flex;align-items:center;justify-content:center;
+    font-size:13px;color:var(--black);font-weight:900;
+    font-family:var(--font-display);
+}
+.logo-text{
+    font-family:var(--font-display);
+    font-size:28px;letter-spacing:0.1em;
+    color:var(--text-bright);
+}
+.logo-text span{color:var(--gold);}
+
+/* ── Card ── */
+.card{
+    background:var(--pit);
+    border:1px solid var(--smoke);
+    border-radius:12px;
+    overflow:hidden;
+    position:relative;
+}
+.card::before{
+    content:'';position:absolute;
+    top:0;left:15%;right:15%;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+
+/* ── Tabs ── */
+.tabs{display:flex;border-bottom:1px solid var(--smoke);}
+.tab{
+    flex:1;padding:14px;
+    background:none;border:none;cursor:pointer;
+    font-family:var(--font-display);font-size:15px;
+    letter-spacing:0.1em;color:var(--text-dim);
+    position:relative;transition:color var(--trans);
+}
+.tab::after{
+    content:'';position:absolute;
+    bottom:0;left:20%;right:20%;height:2px;
+    background:var(--gold);opacity:0;
+    transition:opacity var(--trans);
+}
+.tab.active{color:var(--gold);}
+.tab.active::after{opacity:1;}
+.tab:hover:not(.active){color:var(--text-main);}
+
+/* ── Tab panels ── */
+.panel{padding:24px;display:none;}
+.panel.active{display:block;}
+
+/* ── Form fields ── */
+.field{margin-bottom:16px;}
+.label{
+    display:block;
+    font-family:var(--font-mono);
+    font-size:9px;letter-spacing:0.2em;
+    color:var(--text-dim);text-transform:uppercase;
+    margin-bottom:6px;
+}
+.input{
+    width:100%;
+    background:var(--charcoal);
+    border:1px solid var(--smoke);
+    border-radius:var(--radius);
+    padding:10px 14px;
+    color:var(--text-bright);
+    font-family:var(--font-body);font-size:14px;
+    outline:none;transition:border-color var(--trans);
+}
+.input:focus{border-color:var(--gold-dark);}
+.input::placeholder{color:var(--text-dim);}
+.input.error{border-color:var(--red);}
+
+/* Code input — büyük */
+.code-input{
+    text-align:center;
+    font-family:var(--font-mono);
+    font-size:22px;letter-spacing:0.35em;
+    text-transform:uppercase;
+    font-weight:500;
+}
+
+/* Select */
+select.input{cursor:pointer;}
+select.input option{background:var(--charcoal);}
+
+/* ── Inline row ── */
+.row{display:flex;gap:10px;}
+.row .field{flex:1;}
+
+/* ── Private toggle ── */
+.type-toggle{
+    display:flex;gap:8px;margin-bottom:16px;
+}
+.type-btn{
+    flex:1;padding:8px;
+    border:1px solid var(--smoke);border-radius:var(--radius);
+    background:none;color:var(--text-dim);
+    font-family:var(--font-body);font-size:13px;
+    cursor:pointer;transition:all var(--trans);
+}
+.type-btn.active{
+    border-color:var(--gold-dark);
+    background:rgba(212,168,67,0.08);
+    color:var(--gold);
+}
+
+/* ── Submit button ── */
+.btn{
+    width:100%;padding:12px;
+    background:var(--gold);border:none;border-radius:var(--radius);
+    color:var(--black);font-family:var(--font-body);
+    font-size:14px;font-weight:600;
+    cursor:pointer;transition:all var(--trans);
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    margin-top:8px;
+}
+.btn:hover{background:var(--gold-light);box-shadow:0 0 20px var(--gold-glow);}
+.btn:disabled{opacity:0.5;cursor:not-allowed;box-shadow:none;}
+
+/* ── Feedback ── */
+.msg{
+    margin-top:14px;
+    padding:10px 14px;
+    border-radius:var(--radius);
+    font-size:13px;line-height:1.5;
+    display:none;
+}
+.msg.error{
+    background:rgba(224,48,48,0.1);
+    border:1px solid rgba(224,48,48,0.3);
+    color:#f08080;display:block;
+}
+.msg.success{
+    background:rgba(48,192,96,0.1);
+    border:1px solid rgba(48,192,96,0.3);
+    color:#60d890;display:block;
+}
+
+/* ── Room preview (join öncesi) ── */
+.room-preview{
+    margin-top:12px;
+    padding:12px 14px;
+    background:rgba(212,168,67,0.06);
+    border:1px solid var(--gold-dark);
+    border-radius:var(--radius);
+    display:none;
+}
+.room-preview.show{display:block;}
+.preview-name{
+    font-family:var(--font-display);
+    font-size:16px;letter-spacing:0.08em;
+    color:var(--text-bright);margin-bottom:4px;
+}
+.preview-meta{
+    font-family:var(--font-mono);font-size:10px;
+    color:var(--text-dim);letter-spacing:0.08em;
+}
+.preview-meta span{color:var(--gold);margin-left:6px;}
+
+/* ── Spinner ── */
+@keyframes spin{to{transform:rotate(360deg);}}
+.spinner{
+    width:14px;height:14px;
+    border:2px solid rgba(0,0,0,0.3);
+    border-top-color:var(--black);
+    border-radius:50%;
+    animation:spin 0.6s linear infinite;
+    display:none;
+}
+.btn.loading .spinner{display:block;}
+.btn.loading .btn-text{display:none;}
+
+/* ── Footer ── */
+.footer{
+    text-align:center;margin-top:20px;
+    font-size:11px;color:var(--text-dim);
+}
+</style>
+</head>
+<body>
+<div class="page">
+
+    <div class="logo">
+        <div class="logo-mark">WTM</div>
+        <div class="logo-text">WATCH<span>TO</span>MOVİE</div>
+    </div>
+
+    <div class="card">
+        <div class="tabs">
+            <button class="tab active" id="tab-join" onclick="switchTab('join')">
+                <i class="fa-solid fa-right-to-bracket"></i> Join Room
+            </button>
+            <button class="tab" id="tab-create" onclick="switchTab('create')">
+                <i class="fa-solid fa-plus"></i> Create Room
+            </button>
+        </div>
+
+        <!-- ── JOIN PANEL ── -->
+        <div class="panel active" id="panel-join">
+            <div class="field">
+                <label class="label">Room Code</label>
+                <input type="text" class="input code-input" id="join-code"
+                    placeholder="ABC123" maxlength="6" autocomplete="off" spellcheck="false"
+                    oninput="this.value=this.value.toUpperCase(); onCodeInput()">
+            </div>
+
+            <div class="room-preview" id="join-preview">
+                <div class="preview-name" id="preview-name">—</div>
+                <div class="preview-meta">
+                    Platform: <span id="preview-platform">—</span>
+                    &nbsp;·&nbsp; Host: <span id="preview-host">—</span>
+                    &nbsp;·&nbsp; Member: <span id="preview-members">—</span>
+                </div>
+            </div>
+
+            <div class="field" style="margin-top:16px;">
+                <label class="label">Username</label>
+                <input type="text" class="input" id="join-username"
+                    placeholder="" maxlength="30" autocomplete="off">
+            </div>
+
+            <div class="msg" id="join-msg"></div>
+
+            <button class="btn" id="join-btn" onclick="doJoin()">
+                <span class="spinner"></span>
+                <span class="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Join Room</span>
+            </button>
+        </div>
+
+        <!-- ── CREATE PANEL ── -->
+        <div class="panel" id="panel-create">
+            <div class="field">
+                <label class="label">Room Name</label>
+                <input type="text" class="input" id="create-roomname"
+                    placeholder="" maxlength="60">
+            </div>
+
+            <div class="row">
+                <div class="field">
+                    <label class="label">Username</label>
+                    <input type="text" class="input" id="create-username"
+                        placeholder="" maxlength="30">
+                </div>
+                <div class="field">
+                    <label class="label">Platform</label>
+                    <select class="input" id="create-platform">
+                        <option value="YouTube">YouTube</option>
+                        <option value="Netflix">Netflix</option>
+                        <option value="Disney+">Disney+</option>
+                        <option value="Prime Video">Prime Video</option>
+                        <option value="Twitch">Twitch</option>
+                        <option value="Diğer">Other</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="label" style="margin-bottom:6px;">Room Type</div>
+            <div class="type-toggle" id="type-toggle">
+                <button class="type-btn active" data-type="public" onclick="setType('public')">
+                    <i class="fa-solid fa-globe"></i> Public
+                </button>
+                <button class="type-btn" data-type="private" onclick="setType('private')">
+                    <i class="fa-solid fa-lock"></i> Private
+                </button>
+            </div>
+
+            <div class="field" id="password-field" style="display:none;">
+                <label class="label">Password</label>
+                <input type="password" class="input" id="create-password"
+                    placeholder="Room Password..." maxlength="50">
+            </div>
+
+            <div class="msg" id="create-msg"></div>
+
+            <button class="btn" id="create-btn" onclick="doCreate()">
+                <span class="spinner"></span>
+                <span class="btn-text"><i class="fa-solid fa-plus"></i> Room Create</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="footer">WatchToMovie &copy; 2025 — Watch Together</div>
+</div>
+
+<script>
+// ── room.php URL — kendi sunucuna göre ayarla ──────────────────────
+var ROOM_API = 'room.php';
+
+// ── Tab switch ────────────────────────────────────────────────────
+function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+    document.querySelectorAll('.panel').forEach(function(p) { p.classList.remove('active'); });
+    document.getElementById('tab-' + tab).classList.add('active');
+    document.getElementById('panel-' + tab).classList.add('active');
+}
+
+// ── Private toggle ────────────────────────────────────────────────
+var selectedType = 'public';
+function setType(type) {
+    selectedType = type;
+    document.querySelectorAll('.type-btn').forEach(function(b) {
+        b.classList.toggle('active', b.dataset.type === type);
+    });
+    document.getElementById('password-field').style.display = type === 'private' ? 'block' : 'none';
+}
+
+// ── Kod girilince oda bilgisini önizle ────────────────────────────
+var checkTimer = null;
+function onCodeInput() {
+    var code = document.getElementById('join-code').value.trim();
+    var preview = document.getElementById('join-preview');
+    var msg = document.getElementById('join-msg');
+    msg.className = 'msg'; msg.textContent = '';
+    preview.classList.remove('show');
+
+    if (code.length !== 6) return;
+
+    clearTimeout(checkTimer);
+    checkTimer = setTimeout(function() {
+        fetch(ROOM_API + '?action=check&code=' + encodeURIComponent(code))
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.ok) {
+                    document.getElementById('preview-name').textContent = data.room.name;
+                    document.getElementById('preview-platform').textContent = data.room.platform;
+                    document.getElementById('preview-host').textContent = data.room.host;
+                    document.getElementById('preview-members').textContent = (data.room.members || []).length + ' kişi';
+                    preview.classList.add('show');
+                } else {
+                    showMsg('join-msg', 'error', '✗ ' + (data.message || 'Geçersiz oda kodu.'));
+                }
+            })
+            .catch(function() {
+                // API erişilemiyorsa sessizce geç
+            });
+    }, 400);
+}
+
+// ── JOIN ──────────────────────────────────────────────────────────
+function doJoin() {
+    var code     = document.getElementById('join-code').value.trim().toUpperCase();
+    var username = document.getElementById('join-username').value.trim();
+    var btn      = document.getElementById('join-btn');
+    var msg      = document.getElementById('join-msg');
+
+    if (code.length < 4)    { showMsg('join-msg','error','Oda kodunu gir.'); return; }
+    if (username.length < 2){ showMsg('join-msg','error','Kullanıcı adın en az 2 karakter olmalı.'); return; }
+
+    setLoading(btn, true);
+    msg.className = 'msg';
+
+    fetch(ROOM_API + '?action=join', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ code: code, username: username })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        setLoading(btn, false);
+        if (data.ok) {
+            showMsg('join-msg','success','✓ Odaya katılıyorsun...');
+            // sessionStorage'a oda bilgisini kaydet
+            try {
+                sessionStorage.setItem('w4p_room', JSON.stringify({
+                    code:     data.room.code,
+                    name:     data.room.name,
+                    host:     data.room.host,
+                    platform: data.room.platform,
+                    username: username,
+                    role:     'viewer'
+                }));
+            } catch(_) {}
+            setTimeout(function() {
+                window.location.href = 'watch/index.html?room=' + encodeURIComponent(data.room.code) + '&user=' + encodeURIComponent(username);
+            }, 600);
+        } else {
+            showMsg('join-msg','error','✗ ' + (data.message || 'Bir hata oluştu.'));
+        }
+    })
+    .catch(function() {
+        setLoading(btn, false);
+        showMsg('join-msg','error','✗ Sunucuya bağlanılamadı.');
+    });
+}
+
+// ── CREATE ────────────────────────────────────────────────────────
+function doCreate() {
+    var roomname = document.getElementById('create-roomname').value.trim();
+    var username = document.getElementById('create-username').value.trim();
+    var platform = document.getElementById('create-platform').value;
+    var password = document.getElementById('create-password').value;
+    var btn      = document.getElementById('create-btn');
+
+    if (roomname.length < 3){ showMsg('create-msg','error','Oda adı en az 3 karakter olmalı.'); return; }
+    if (username.length < 2){ showMsg('create-msg','error','Kullanıcı adın en az 2 karakter olmalı.'); return; }
+    if (selectedType === 'private' && password.length < 3) {
+        showMsg('create-msg','error','Özel oda için şifre gerekli (min. 3 karakter).'); return;
+    }
+
+    setLoading(btn, true);
+    document.getElementById('create-msg').className = 'msg';
+
+    fetch(ROOM_API + '?action=create', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+            roomname: roomname,
+            username: username,
+            platform: platform,
+            type:     selectedType,
+            password: password
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        setLoading(btn, false);
+        if (data.ok) {
+            showMsg('create-msg','success','✓ Oda oluşturuldu! Kod: ' + data.code);
+            // sessionStorage'a kaydet
+            try {
+                sessionStorage.setItem('w4p_room', JSON.stringify({
+                    code:     data.room.code,
+                    name:     data.room.name,
+                    host:     username,
+                    platform: platform,
+                    username: username,
+                    role:     'host'
+                }));
+            } catch(_) {}
+            setTimeout(function() {
+                window.location.href = 'watch/index.html?room=' + encodeURIComponent(data.code) + '&user=' + encodeURIComponent(username) + '&host=1';
+            }, 800);
+        } else {
+            showMsg('create-msg','error','✗ ' + (data.message || 'Bir hata oluştu.'));
+        }
+    })
+    .catch(function() {
+        setLoading(btn, false);
+        showMsg('create-msg','error','✗ Sunucuya bağlanılamadı.');
+    });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────
+function showMsg(id, type, text) {
+    var el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'msg ' + type;
+}
+function setLoading(btn, loading) {
+    btn.disabled = loading;
+    btn.classList.toggle('loading', loading);
+}
+
+// Enter tuşu desteği
+document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Enter') return;
+    var activePanel = document.querySelector('.panel.active').id;
+    if (activePanel === 'panel-join')   doJoin();
+    if (activePanel === 'panel-create') doCreate();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>macOS — Coming Soon | Watch4Party</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --black:      #000000;
+    --void:       #030303;
+    --pit:        #080808;
+    --charcoal:   #111111;
+    --carbon:     #1a1a1a;
+    --smoke:      #252525;
+    --ash:        #333333;
+    --text-bright:#f5f0e8;
+    --text-main:  #c8c0b0;
+    --text-dim:   #706860;
+    --text-ghost: #3a3530;
+    --gold:       #d4a843;
+    --gold-light: #e8c060;
+    --gold-dark:  #9a7820;
+    --gold-glow:  rgba(212,168,67,0.2);
+    --amber:      #f0a030;
+    --font-display:'Bebas Neue', sans-serif;
+    --font-body:  'DM Sans', sans-serif;
+    --font-mono:  'JetBrains Mono', monospace;
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+html, body {
+    min-height:100vh;
+    background:var(--black);
+    color:var(--text-main);
+    font-family:var(--font-body);
+    font-size:14px;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+}
+
+/* film grain */
+body::before {
+    content:'';
+    position:fixed;inset:0;z-index:9999;pointer-events:none;opacity:0.03;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:128px;
+}
+
+/* animated background grid */
+.bg-grid {
+    position:fixed;inset:0;z-index:0;
+    background-image:
+        linear-gradient(rgba(212,168,67,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,168,67,0.03) 1px, transparent 1px);
+    background-size:60px 60px;
+    animation:gridDrift 20s linear infinite;
+}
+@keyframes gridDrift {
+    0%   { background-position:0 0; }
+    100% { background-position:60px 60px; }
+}
+
+/* radial glow center */
+.bg-glow {
+    position:fixed;
+    top:50%;left:50%;
+    transform:translate(-50%,-50%);
+    width:800px;height:600px;
+    background:radial-gradient(ellipse, rgba(212,168,67,0.06) 0%, transparent 70%);
+    pointer-events:none;z-index:0;
+    animation:glowPulse 4s ease-in-out infinite;
+}
+@keyframes glowPulse {
+    0%,100% { opacity:0.6; transform:translate(-50%,-50%) scale(1); }
+    50%      { opacity:1;   transform:translate(-50%,-50%) scale(1.08); }
+}
+
+/* topbar */
+.topbar {
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    height:52px;
+    display:flex;align-items:center;padding:0 32px;gap:12px;
+    background:rgba(0,0,0,0.8);
+    border-bottom:1px solid var(--charcoal);
+    backdrop-filter:blur(12px);
+}
+.topbar::before {
+    content:'';position:absolute;left:0;top:10px;bottom:10px;
+    width:2px;background:linear-gradient(180deg,transparent,var(--gold),transparent);
+}
+.logo-mark {
+    width:28px;height:28px;
+    background:var(--gold);
+    clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-display);font-size:10px;color:var(--black);font-weight:900;
+    flex-shrink:0;
+}
+.logo-text {
+    font-family:var(--font-display);font-size:18px;letter-spacing:0.08em;color:var(--text-bright);
+}
+.logo-text span { color:var(--gold); }
+.topbar-back {
+    margin-left:auto;
+    display:flex;align-items:center;gap:6px;
+    font-size:12px;color:var(--text-dim);
+    text-decoration:none;
+    padding:6px 12px;border-radius:4px;border:1px solid var(--smoke);
+    transition:all 0.2s;font-family:var(--font-mono);letter-spacing:0.05em;
+}
+.topbar-back:hover { border-color:var(--gold-dark);color:var(--gold); }
+
+/* main content */
+.page {
+    position:relative;z-index:1;
+    min-height:100vh;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    padding:100px 24px 60px;
+    text-align:center;
+}
+
+/* Apple logo big */
+.apple-icon-wrap {
+    position:relative;
+    width:100px;height:100px;
+    margin:0 auto 36px;
+    animation:floatIcon 3s ease-in-out infinite;
+}
+@keyframes floatIcon {
+    0%,100% { transform:translateY(0); }
+    50%      { transform:translateY(-8px); }
+}
+.apple-icon-wrap::before {
+    content:'';
+    position:absolute;inset:-20px;border-radius:50%;
+    border:1px solid var(--gold-dark);opacity:0.3;
+    animation:ringPulse 3s ease-in-out infinite;
+}
+.apple-icon-wrap::after {
+    content:'';
+    position:absolute;inset:-36px;border-radius:50%;
+    border:1px solid var(--gold-dark);opacity:0.15;
+    animation:ringPulse 3s ease-in-out infinite 0.8s;
+}
+@keyframes ringPulse {
+    0%,100% { transform:scale(1);opacity:0.3; }
+    50%      { transform:scale(1.06);opacity:0.5; }
+}
+.apple-icon {
+    width:100px;height:100px;
+    border-radius:50%;
+    border:2px solid var(--gold-dark);
+    background:rgba(212,168,67,0.06);
+    display:flex;align-items:center;justify-content:center;
+    font-size:44px;color:var(--gold);
+}
+
+/* badge */
+.soon-badge {
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(212,168,67,0.08);
+    border:1px solid var(--gold-dark);
+    border-radius:20px;
+    padding:6px 16px;
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.2em;
+    color:var(--gold);margin-bottom:24px;
+}
+.soon-badge-dot {
+    width:6px;height:6px;border-radius:50%;background:var(--gold);
+    animation:blink 1.5s ease-in-out infinite;
+}
+@keyframes blink {
+    0%,100% { opacity:1; }
+    50%      { opacity:0.3; }
+}
+
+/* heading */
+.page-title {
+    font-family:var(--font-display);
+    font-size:clamp(48px, 8vw, 82px);
+    letter-spacing:0.06em;
+    color:var(--text-bright);
+    line-height:0.95;
+    margin-bottom:12px;
+}
+.page-title span { color:var(--gold); }
+
+.page-sub {
+    font-family:var(--font-display);
+    font-size:clamp(22px, 4vw, 36px);
+    letter-spacing:0.15em;
+    color:var(--text-dim);
+    margin-bottom:28px;
+}
+
+.page-desc {
+    font-size:15px;
+    color:var(--text-dim);
+    line-height:1.8;
+    max-width:520px;
+    margin:0 auto 48px;
+}
+.page-desc strong { color:var(--text-main);font-weight:500; }
+
+/* features */
+.features {
+    display:flex;gap:16px;flex-wrap:wrap;justify-content:center;
+    margin-bottom:52px;max-width:640px;
+}
+.feat {
+    display:flex;align-items:center;gap:10px;
+    background:var(--charcoal);
+    border:1px solid var(--smoke);
+    border-radius:8px;padding:14px 18px;
+    min-width:180px;flex:1;
+    transition:border-color 0.2s;
+}
+.feat:hover { border-color:var(--gold-dark); }
+.feat-icon {
+    width:36px;height:36px;border-radius:8px;
+    background:rgba(212,168,67,0.08);border:1px solid var(--gold-dark);
+    display:flex;align-items:center;justify-content:center;
+    color:var(--gold);font-size:14px;flex-shrink:0;
+}
+.feat-text { text-align:left; }
+.feat-name { font-size:12.5px;font-weight:500;color:var(--text-bright);margin-bottom:2px; }
+.feat-desc { font-size:11px;color:var(--text-dim); }
+
+/* divider */
+.divider {
+    width:120px;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold-dark),transparent);
+    margin:0 auto 36px;opacity:0.6;
+}
+
+/* notify form */
+.notify-wrap {
+    margin-bottom:48px;
+}
+.notify-label {
+    font-family:var(--font-mono);font-size:10px;letter-spacing:0.2em;
+    color:var(--text-dim);margin-bottom:14px;
+}
+.notify-form {
+    display:flex;gap:8px;max-width:420px;margin:0 auto;
+}
+.notify-input {
+    flex:1;background:var(--charcoal);border:1px solid var(--smoke);
+    border-radius:6px;padding:11px 14px;
+    color:var(--text-bright);font-family:var(--font-body);font-size:13px;
+    outline:none;transition:border-color 0.2s;
+}
+.notify-input:focus { border-color:var(--gold-dark); }
+.notify-input::placeholder { color:var(--text-ghost); }
+.notify-btn {
+    padding:11px 22px;background:var(--gold);border:none;border-radius:6px;
+    color:var(--black);font-weight:700;font-size:13px;cursor:pointer;
+    font-family:var(--font-body);transition:all 0.2s;white-space:nowrap;
+}
+.notify-btn:hover { background:var(--gold-light);box-shadow:0 0 20px var(--gold-glow); }
+.notify-success {
+    display:none;align-items:center;justify-content:center;gap:8px;
+    font-size:13px;color:var(--gold);font-family:var(--font-mono);
+    letter-spacing:0.08em;margin-top:12px;
+}
+
+/* windows cta */
+.win-cta {
+    background:var(--pit);border:1px solid var(--charcoal);
+    border-radius:12px;padding:24px 32px;
+    display:inline-flex;align-items:center;gap:20px;
+    max-width:480px;width:100%;
+}
+.win-cta-text { text-align:left;flex:1; }
+.win-cta-title { font-size:13px;font-weight:500;color:var(--text-bright);margin-bottom:4px; }
+.win-cta-sub { font-size:11px;color:var(--text-dim); }
+.win-dl-btn {
+    display:inline-flex;align-items:center;gap:8px;
+    padding:10px 20px;background:var(--gold);
+    color:var(--black);border-radius:6px;font-weight:700;
+    font-size:12.5px;text-decoration:none;white-space:nowrap;
+    transition:all 0.2s;font-family:var(--font-body);
+    flex-shrink:0;
+}
+.win-dl-btn:hover { background:var(--gold-light);box-shadow:0 0 16px var(--gold-glow); }
+
+/* footer note */
+.foot-note {
+    margin-top:48px;
+    font-family:var(--font-mono);font-size:10px;
+    letter-spacing:0.12em;color:var(--text-ghost);
+}
+
+/* film strip decoration */
+.film-strip {
+    position:fixed;right:-10px;top:50%;transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:0;opacity:0.12;pointer-events:none;
+    z-index:0;
+}
+.film-hole {
+    width:24px;height:16px;background:transparent;
+    border:1px solid var(--gold);margin:3px 4px;border-radius:2px;
+}
+.film-frame {
+    width:32px;height:24px;background:var(--charcoal);margin:0 0;
+}
+.film-strip-left {
+    position:fixed;left:-10px;top:50%;transform:translateY(-50%);
+    display:flex;flex-direction:column;gap:0;opacity:0.12;pointer-events:none;z-index:0;
+}
+
+/* page entrance animation */
+@keyframes fadeUp {
+    from { opacity:0;transform:translateY(24px); }
+    to   { opacity:1;transform:translateY(0); }
+}
+.apple-icon-wrap  { animation:floatIcon 3s ease-in-out infinite, fadeUp 0.5s ease both 0.1s; }
+.soon-badge       { animation:fadeUp 0.5s ease both 0.2s; }
+.page-title       { animation:fadeUp 0.5s ease both 0.3s; }
+.page-sub         { animation:fadeUp 0.5s ease both 0.35s; }
+.page-desc        { animation:fadeUp 0.5s ease both 0.4s; }
+.features         { animation:fadeUp 0.5s ease both 0.45s; }
+.notify-wrap      { animation:fadeUp 0.5s ease both 0.5s; }
+.win-cta          { animation:fadeUp 0.5s ease both 0.55s; }
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- Film strip decorations -->
+<div class="film-strip">
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div>
+</div>
+<div class="film-strip-left">
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div><div class="film-frame"></div>
+    <div class="film-hole"></div>
+</div>
+
+<!-- Topbar -->
+<header class="topbar">
+    <div class="logo-mark">W4P</div>
+    <div class="logo-text">WATCH<span>4</span>PARTY</div>
+    <a href="javascript:history.back()" class="topbar-back">
+        <i class="fa-solid fa-arrow-left" style="font-size:10px;"></i> Go Back
+    </a>
+</header>
+
+<!-- Main -->
+<main class="page">
+
+    <!-- Apple icon -->
+    <div class="apple-icon-wrap">
+        <div class="apple-icon">
+            <i class="fa-brands fa-apple"></i>
+        </div>
+    </div>
+
+    <!-- Badge -->
+    <div class="soon-badge">
+        <div class="soon-badge-dot"></div>
+        COMING SOON
+    </div>
+
+    <!-- Title -->
+    <div class="page-title">macOS<br><span>SUPPORT</span></div>
+    <div class="page-sub">VERY SOON</div>
+
+    <p class="page-desc">
+        We are actively working on the <strong>macOS version</strong> of Watch4Party.<br>
+        Coming with full support for Apple Silicon and Intel Macs.<br>
+        <strong>Sign up for notifications</strong> and we'll let you know the moment it launches.
+    </p>
+
+    <!-- Features -->
+    <div class="features">
+        <div class="feat">
+            <div class="feat-icon"><i class="fa-brands fa-apple"></i></div>
+            <div class="feat-text">
+                <div class="feat-name">Apple Silicon</div>
+                <div class="feat-desc">M1, M2, M3 fully supported</div>
+            </div>
+        </div>
+        <div class="feat">
+            <div class="feat-icon"><i class="fa-solid fa-rotate"></i></div>
+            <div class="feat-text">
+                <div class="feat-name">Sync Watching</div>
+                <div class="feat-desc">In sync with Windows</div>
+            </div>
+        </div>
+        <div class="feat">
+            <div class="feat-icon"><i class="fa-solid fa-tv"></i></div>
+            <div class="feat-text">
+                <div class="feat-name">50+ Platforms</div>
+                <div class="feat-desc">Netflix, Disney+, Prime</div>
+            </div>
+        </div>
+        <div class="feat">
+            <div class="feat-icon"><i class="fa-solid fa-film"></i></div>
+            <div class="feat-text">
+                <div class="feat-name">4K HDR</div>
+                <div class="feat-desc">Ad-free, high quality</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Notify form -->
+    <div class="notify-wrap">
+        <div class="notify-label">NOTIFY ME WHEN IT'S OUT</div>
+        <div class="notify-form">
+            <input type="email" class="notify-input" id="notify-email" placeholder="your@email.com">
+            <button class="notify-btn" onclick="submitNotify()">
+                <i class="fa-solid fa-bell" style="margin-right:6px;font-size:11px;"></i>Notify Me
+            </button>
+        </div>
+        <div class="notify-success" id="notify-success">
+            <i class="fa-solid fa-check" style="font-size:12px;"></i>
+            Done! We'll notify you when macOS launches.
+        </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Windows CTA -->
+    <div class="win-cta">
+        <div class="win-cta-text">
+            <div class="win-cta-title">Currently on Windows?</div>
+            <div class="win-cta-sub">The Windows version is ready to download now.</div>
+        </div>
+        <a href="../index.html#download" class="win-dl-btn">
+            <i class="fa-brands fa-windows"></i> Download for Windows
+        </a>
+    </div>
+
+    <div class="foot-note">
+        WATCHTOMOVIE · MACOS SUPPORT COMING SOON · STAY TUNED
+    </div>
+
+</main>
+
+<script>
+function submitNotify() {
+    var input = document.getElementById('notify-email');
+    var val = (input.value || '').trim();
+    if (!val || !val.includes('@')) {
+        input.style.borderColor = '#e03030';
+        setTimeout(function() { input.style.borderColor = ''; }, 1200);
+        return;
+    }
+    input.style.display = 'none';
+    document.querySelector('.notify-btn').style.display = 'none';
+    var success = document.getElementById('notify-success');
+    success.style.display = 'flex';
+}
+</script>
+</body>
+</html>
