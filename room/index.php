@@ -1,3 +1,7 @@
+<?php
+// index.php — Watch4Party Ana Sayfa
+// Firebase kaldırıldı → rooms.php PHP backend kullanılıyor
+?>
 <!DOCTYPE html>
 <html lang="tr" data-theme="dark">
 <head>
@@ -55,7 +59,7 @@ body::before{
     width:100%;max-width:440px;
     margin:32px 16px;
 }
-
+ 
 /* ── Logo ── */
 .logo{
     display:flex;align-items:center;gap:12px;
@@ -75,7 +79,7 @@ body::before{
     color:var(--text-bright);
 }
 .logo-text span{color:var(--gold);}
-
+ 
 /* ── Card ── */
 .card{
     background:var(--pit);
@@ -89,7 +93,7 @@ body::before{
     top:0;left:15%;right:15%;height:1px;
     background:linear-gradient(90deg,transparent,var(--gold),transparent);
 }
-
+ 
 /* ── Tabs ── */
 .tabs{display:flex;border-bottom:1px solid var(--smoke);}
 .tab{
@@ -108,11 +112,11 @@ body::before{
 .tab.active{color:var(--gold);}
 .tab.active::after{opacity:1;}
 .tab:hover:not(.active){color:var(--text-main);}
-
+ 
 /* ── Tab panels ── */
 .panel{padding:24px;display:none;}
 .panel.active{display:block;}
-
+ 
 /* ── Form fields ── */
 .field{margin-bottom:16px;}
 .label{
@@ -135,7 +139,7 @@ body::before{
 .input:focus{border-color:var(--gold-dark);}
 .input::placeholder{color:var(--text-dim);}
 .input.error{border-color:var(--red);}
-
+ 
 /* Code input — büyük */
 .code-input{
     text-align:center;
@@ -144,15 +148,15 @@ body::before{
     text-transform:uppercase;
     font-weight:500;
 }
-
+ 
 /* Select */
 select.input{cursor:pointer;}
 select.input option{background:var(--charcoal);}
-
+ 
 /* ── Inline row ── */
 .row{display:flex;gap:10px;}
 .row .field{flex:1;}
-
+ 
 /* ── Private toggle ── */
 .type-toggle{
     display:flex;gap:8px;margin-bottom:16px;
@@ -169,7 +173,7 @@ select.input option{background:var(--charcoal);}
     background:rgba(212,168,67,0.08);
     color:var(--gold);
 }
-
+ 
 /* ── Submit button ── */
 .btn{
     width:100%;padding:12px;
@@ -182,7 +186,9 @@ select.input option{background:var(--charcoal);}
 }
 .btn:hover{background:var(--gold-light);box-shadow:0 0 20px var(--gold-glow);}
 .btn:disabled{opacity:0.5;cursor:not-allowed;box-shadow:none;}
-
+.btn.loading .spinner{display:block;}
+.btn.loading .btn-text{display:none;}
+ 
 /* ── Feedback ── */
 .msg{
     margin-top:14px;
@@ -201,7 +207,7 @@ select.input option{background:var(--charcoal);}
     border:1px solid rgba(48,192,96,0.3);
     color:#60d890;display:block;
 }
-
+ 
 /* ── Room preview (join öncesi) ── */
 .room-preview{
     margin-top:12px;
@@ -222,7 +228,12 @@ select.input option{background:var(--charcoal);}
     color:var(--text-dim);letter-spacing:0.08em;
 }
 .preview-meta span{color:var(--gold);margin-left:6px;}
-
+.preview-lock{
+    display:inline-flex;align-items:center;gap:4px;
+    color:var(--gold);font-size:10px;margin-top:6px;
+    font-family:var(--font-mono);letter-spacing:0.08em;
+}
+ 
 /* ── Spinner ── */
 @keyframes spin{to{transform:rotate(360deg);}}
 .spinner{
@@ -233,9 +244,43 @@ select.input option{background:var(--charcoal);}
     animation:spin 0.6s linear infinite;
     display:none;
 }
-.btn.loading .spinner{display:block;}
-.btn.loading .btn-text{display:none;}
-
+ 
+/* ── Şifre modal overlay ── */
+.overlay{
+    position:fixed;inset:0;z-index:100;
+    background:rgba(0,0,0,0.85);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;
+    transition:opacity 0.2s;
+}
+.overlay.show{opacity:1;pointer-events:all;}
+.modal{
+    background:var(--pit);
+    border:1px solid var(--gold-dark);
+    border-radius:12px;
+    padding:28px 24px;
+    width:100%;max-width:340px;
+    position:relative;
+}
+.modal::before{
+    content:'';position:absolute;
+    top:0;left:15%;right:15%;height:1px;
+    background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.modal-title{
+    font-family:var(--font-display);
+    font-size:20px;letter-spacing:0.08em;
+    color:var(--text-bright);
+    margin-bottom:6px;
+    display:flex;align-items:center;gap:8px;
+}
+.modal-title i{color:var(--gold);}
+.modal-sub{
+    font-size:12px;color:var(--text-dim);
+    margin-bottom:18px;
+}
+.modal-sub strong{color:var(--gold);}
+ 
 /* ── Footer ── */
 .footer{
     text-align:center;margin-top:20px;
@@ -244,13 +289,37 @@ select.input option{background:var(--charcoal);}
 </style>
 </head>
 <body>
+ 
+<!-- ── Şifre Modal ── -->
+<div class="overlay" id="pw-overlay">
+    <div class="modal">
+        <div class="modal-title"><i class="fa-solid fa-lock"></i> Private Room</div>
+        <div class="modal-sub">Bu oda şifreli. Devam etmek için şifreyi gir.<br><strong id="pw-room-name"></strong></div>
+        <div class="field">
+            <label class="label">Room Password</label>
+            <input type="password" class="input" id="pw-input"
+                placeholder="Şifre..." maxlength="50" oninput="clearPwError()">
+        </div>
+        <div class="msg" id="pw-msg"></div>
+        <button class="btn" id="pw-btn" onclick="submitPassword()" style="margin-top:12px;">
+            <span class="spinner"></span>
+            <span class="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</span>
+        </button>
+        <button onclick="closePasswordModal()"
+            style="width:100%;margin-top:8px;padding:8px;background:none;border:1px solid var(--smoke);
+                   border-radius:var(--radius);color:var(--text-dim);cursor:pointer;font-size:13px;">
+            İptal
+        </button>
+    </div>
+</div>
+ 
 <div class="page">
-
+ 
     <div class="logo">
         <div class="logo-mark">WTM</div>
         <div class="logo-text">WATCH<span>TO</span>MOVİE</div>
     </div>
-
+ 
     <div class="card">
         <div class="tabs">
             <button class="tab active" id="tab-join" onclick="switchTab('join')">
@@ -260,7 +329,7 @@ select.input option{background:var(--charcoal);}
                 <i class="fa-solid fa-plus"></i> Create Room
             </button>
         </div>
-
+ 
         <!-- ── JOIN PANEL ── -->
         <div class="panel active" id="panel-join">
             <div class="field">
@@ -269,7 +338,7 @@ select.input option{background:var(--charcoal);}
                     placeholder="ABC123" maxlength="6" autocomplete="off" spellcheck="false"
                     oninput="this.value=this.value.toUpperCase(); onCodeInput()">
             </div>
-
+ 
             <div class="room-preview" id="join-preview">
                 <div class="preview-name" id="preview-name">—</div>
                 <div class="preview-meta">
@@ -277,22 +346,25 @@ select.input option{background:var(--charcoal);}
                     &nbsp;·&nbsp; Host: <span id="preview-host">—</span>
                     &nbsp;·&nbsp; Member: <span id="preview-members">—</span>
                 </div>
+                <div id="preview-lock-row" style="display:none;">
+                    <span class="preview-lock"><i class="fa-solid fa-lock"></i> Şifreli oda</span>
+                </div>
             </div>
-
+ 
             <div class="field" style="margin-top:16px;">
                 <label class="label">Username</label>
                 <input type="text" class="input" id="join-username"
                     placeholder="" maxlength="30" autocomplete="off">
             </div>
-
+ 
             <div class="msg" id="join-msg"></div>
-
+ 
             <button class="btn" id="join-btn" onclick="doJoin()">
                 <span class="spinner"></span>
                 <span class="btn-text"><i class="fa-solid fa-right-to-bracket"></i> Join Room</span>
             </button>
         </div>
-
+ 
         <!-- ── CREATE PANEL ── -->
         <div class="panel" id="panel-create">
             <div class="field">
@@ -300,7 +372,7 @@ select.input option{background:var(--charcoal);}
                 <input type="text" class="input" id="create-roomname"
                     placeholder="" maxlength="60">
             </div>
-
+ 
             <div class="row">
                 <div class="field">
                     <label class="label">Username</label>
@@ -319,7 +391,7 @@ select.input option{background:var(--charcoal);}
                     </select>
                 </div>
             </div>
-
+ 
             <div class="label" style="margin-bottom:6px;">Room Type</div>
             <div class="type-toggle" id="type-toggle">
                 <button class="type-btn active" data-type="public" onclick="setType('public')">
@@ -329,58 +401,56 @@ select.input option{background:var(--charcoal);}
                     <i class="fa-solid fa-lock"></i> Private
                 </button>
             </div>
-
+ 
             <div class="field" id="password-field" style="display:none;">
                 <label class="label">Password</label>
                 <input type="password" class="input" id="create-password"
                     placeholder="Room Password..." maxlength="50">
             </div>
-
+ 
             <div class="msg" id="create-msg"></div>
-
+ 
             <button class="btn" id="create-btn" onclick="doCreate()">
                 <span class="spinner"></span>
                 <span class="btn-text"><i class="fa-solid fa-plus"></i> Room Create</span>
             </button>
         </div>
     </div>
-
+ 
     <div class="footer">WatchToMovie &copy; 2025 — Watch Together</div>
 </div>
-
+ 
 <script>
-// ── Firebase Realtime Database ────────────────────────────────────
-var FB = 'https://watchtomovie-23705.firebaseio.com/rooms';
-
-function fbGet(code) {
-    return fetch(FB + '/' + code + '.json').then(function(r) { return r.json(); });
-}
-function fbSet(code, data) {
-    return fetch(FB + '/' + code + '.json', {
-        method: 'PUT',
+// ── PHP Backend ───────────────────────────────────────────────────
+var API = 'rooms.php';
+ 
+// rooms.php'ye istek gönder
+function apiCall(action, code, data) {
+    var payload = Object.assign({ action: action }, code ? { code: code } : {}, data || {});
+    return fetch(API, {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify(payload)
     }).then(function(r) { return r.json(); });
 }
-function fbPatch(code, data) {
-    return fetch(FB + '/' + code + '.json', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    }).then(function(r) { return r.json(); });
-}
-
+ 
+function roomGet(code)         { return apiCall('get', code, {}); }
+function roomSet(code, data)   { return apiCall('set', code, data); }
+function roomPatch(code, data) { return apiCall('patch', code, data); }
+function roomCheckPw(code, pw) { return apiCall('check_password', code, { password: pw }); }
+ 
+// ── Kod üreteci ───────────────────────────────────────────────────
 function generateCode() {
     var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     var code = '';
     for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
     return code;
 }
-
+ 
 function hashPass(p) {
     return btoa(unescape(encodeURIComponent('w4p_' + p)));
 }
-
+ 
 // ── Tab switch ────────────────────────────────────────────────────
 function switchTab(tab) {
     document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
@@ -388,7 +458,7 @@ function switchTab(tab) {
     document.getElementById('tab-' + tab).classList.add('active');
     document.getElementById('panel-' + tab).classList.add('active');
 }
-
+ 
 // ── Private toggle ────────────────────────────────────────────────
 var selectedType = 'public';
 function setType(type) {
@@ -398,81 +468,158 @@ function setType(type) {
     });
     document.getElementById('password-field').style.display = type === 'private' ? 'block' : 'none';
 }
-
+ 
 // ── Kod girilince oda bilgisini önizle ────────────────────────────
 var checkTimer = null;
+var currentPreviewRoom = null; // join için önizlenen oda
+ 
 function onCodeInput() {
     var code = document.getElementById('join-code').value.trim();
     var preview = document.getElementById('join-preview');
     var msg = document.getElementById('join-msg');
     msg.className = 'msg'; msg.textContent = '';
     preview.classList.remove('show');
-
+    currentPreviewRoom = null;
+ 
     if (code.length !== 6) return;
-
+ 
     clearTimeout(checkTimer);
     checkTimer = setTimeout(function() {
-        fbGet(code).then(function(room) {
+        roomGet(code).then(function(room) {
             if (room && room.active) {
+                currentPreviewRoom = room;
                 document.getElementById('preview-name').textContent = room.name;
                 document.getElementById('preview-platform').textContent = room.platform;
                 document.getElementById('preview-host').textContent = room.host;
                 var mc = room.members ? Object.keys(room.members).length : 0;
                 document.getElementById('preview-members').textContent = mc + ' kişi';
+ 
+                // Şifreli oda göstergesi
+                var lockRow = document.getElementById('preview-lock-row');
+                lockRow.style.display = room.type === 'private' ? 'block' : 'none';
+ 
                 preview.classList.add('show');
             } else {
                 showMsg('join-msg', 'error', '✗ Geçersiz oda kodu.');
             }
         }).catch(function() {
-            showMsg('join-msg', 'error', '✗ Bağlantı hatası.');
+            showMsg('join-msg', 'error', '✗ Sunucuya bağlanılamadı.');
         });
     }, 400);
 }
-
+ 
 // ── JOIN ──────────────────────────────────────────────────────────
 function doJoin() {
     var code     = document.getElementById('join-code').value.trim().toUpperCase();
     var username = document.getElementById('join-username').value.trim();
-    var btn      = document.getElementById('join-btn');
-    var msg      = document.getElementById('join-msg');
-
+ 
     if (code.length < 4)     { showMsg('join-msg','error','Oda kodunu gir.'); return; }
     if (username.length < 2) { showMsg('join-msg','error','Kullanıcı adın en az 2 karakter olmalı.'); return; }
-
-    setLoading(btn, true);
-    msg.className = 'msg';
-
-    fbGet(code).then(function(room) {
-        if (!room || !room.active) {
+ 
+    var btn = document.getElementById('join-btn');
+ 
+    // Oda bilgisi zaten önizlemede varsa tekrar çekme, yoksa çek
+    if (currentPreviewRoom && currentPreviewRoom.code === code) {
+        proceedJoin(code, username, currentPreviewRoom, btn);
+    } else {
+        setLoading(btn, true);
+        roomGet(code).then(function(room) {
+            if (!room || !room.active) {
+                setLoading(btn, false);
+                showMsg('join-msg','error','✗ Geçersiz oda kodu: ' + code);
+                return;
+            }
+            currentPreviewRoom = room;
             setLoading(btn, false);
-            showMsg('join-msg','error','✗ Geçersiz oda kodu: ' + code);
-            return;
-        }
-        var members = room.members || {};
-        members[username] = true;
-        return fbPatch(code, { members: members }).then(function() {
+            proceedJoin(code, username, room, btn);
+        }).catch(function() {
             setLoading(btn, false);
-            showMsg('join-msg','success','✓ Odaya katılıyorsun...');
-            try {
-                sessionStorage.setItem('w4p_room', JSON.stringify({
-                    code:     code,
-                    name:     room.name,
-                    host:     room.host,
-                    platform: room.platform,
-                    username: username,
-                    role:     'viewer'
-                }));
-            } catch(_) {}
-            setTimeout(function() {
-                window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username);
-            }, 600);
+            showMsg('join-msg','error','✗ Sunucuya bağlanılamadı.');
         });
+    }
+}
+ 
+function proceedJoin(code, username, room, btn) {
+    // Şifreli oda → modal aç
+    if (room.type === 'private') {
+        openPasswordModal(code, username, room, btn);
+        return;
+    }
+    // Şifresiz → direkt giriş
+    finalizeJoin(code, username, room, btn, false);
+}
+ 
+// ── Şifre Modal ───────────────────────────────────────────────────
+var _pwCallback = null; // şifre doğrulandığında çağrılır
+ 
+function openPasswordModal(code, username, room, btn) {
+    document.getElementById('pw-room-name').textContent = room.name;
+    document.getElementById('pw-input').value = '';
+    document.getElementById('pw-msg').className = 'msg';
+    document.getElementById('pw-overlay').classList.add('show');
+    setTimeout(function() { document.getElementById('pw-input').focus(); }, 100);
+ 
+    _pwCallback = function(hashedPw) {
+        // Sunucuda doğrula
+        setLoading(document.getElementById('pw-btn'), true);
+        roomCheckPw(code, hashedPw).then(function(res) {
+            setLoading(document.getElementById('pw-btn'), false);
+            if (res && res.ok) {
+                closePasswordModal();
+                finalizeJoin(code, username, room, btn, true);
+            } else {
+                showMsg('pw-msg','error','✗ ' + (res.error || 'Yanlış şifre.'));
+            }
+        }).catch(function() {
+            setLoading(document.getElementById('pw-btn'), false);
+            showMsg('pw-msg','error','✗ Sunucu hatası.');
+        });
+    };
+}
+ 
+function submitPassword() {
+    var pw = document.getElementById('pw-input').value;
+    if (!pw) { showMsg('pw-msg','error','Şifre boş olamaz.'); return; }
+    if (_pwCallback) _pwCallback(hashPass(pw));
+}
+ 
+function closePasswordModal() {
+    document.getElementById('pw-overlay').classList.remove('show');
+    _pwCallback = null;
+}
+ 
+function clearPwError() {
+    var m = document.getElementById('pw-msg');
+    m.className = 'msg'; m.textContent = '';
+}
+ 
+// ── Join sonlandır ────────────────────────────────────────────────
+function finalizeJoin(code, username, room, btn, wasPrivate) {
+    setLoading(btn, true);
+    var members = room.members || {};
+    members[username] = true;
+    roomPatch(code, { members: members }).then(function() {
+        setLoading(btn, false);
+        showMsg('join-msg','success','✓ Odaya katılıyorsun...');
+        try {
+            sessionStorage.setItem('w4p_room', JSON.stringify({
+                code:     code,
+                name:     room.name,
+                host:     room.host,
+                platform: room.platform,
+                username: username,
+                role:     'viewer'
+            }));
+        } catch(_) {}
+        setTimeout(function() {
+            window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username);
+        }, 600);
     }).catch(function() {
         setLoading(btn, false);
-        showMsg('join-msg','error','✗ Firebase\'e bağlanılamadı.');
+        showMsg('join-msg','error','✗ Sunucuya bağlanılamadı.');
     });
 }
-
+ 
 // ── CREATE ────────────────────────────────────────────────────────
 function doCreate() {
     var roomname = document.getElementById('create-roomname').value.trim();
@@ -480,36 +627,37 @@ function doCreate() {
     var platform = document.getElementById('create-platform').value;
     var password = document.getElementById('create-password').value;
     var btn      = document.getElementById('create-btn');
-
+ 
     if (roomname.length < 3) { showMsg('create-msg','error','Oda adı en az 3 karakter olmalı.'); return; }
     if (username.length < 2) { showMsg('create-msg','error','Kullanıcı adın en az 2 karakter olmalı.'); return; }
     if (selectedType === 'private' && password.length < 3) {
         showMsg('create-msg','error','Özel oda için şifre gerekli (min. 3 karakter).'); return;
     }
-
+ 
     setLoading(btn, true);
     document.getElementById('create-msg').className = 'msg';
-
+ 
     var code = generateCode();
-
-    fbGet(code).then(function(existing) {
-        if (existing && existing.active) code = generateCode();
-        var members = {};
-        members[username] = true;
+ 
+    // Kod çakışma kontrolü: sunucu da kontrol eder ama önce biz de bakalım
+    roomGet(code).then(function(existing) {
+        if (existing && existing.active) code = generateCode(); // yeni kod dene
+ 
         var roomData = {
-            code:       code,
-            name:       roomname,
-            host:       username,
-            platform:   platform,
-            type:       selectedType,
-            password:   selectedType === 'private' ? hashPass(password) : null,
-            active:     true,
-            created_at: new Date().toISOString(),
-            members:    members
+            name:     roomname,
+            host:     username,
+            platform: platform,
+            type:     selectedType,
+            password: selectedType === 'private' ? hashPass(password) : null,
         };
-        return fbSet(code, roomData);
-    }).then(function() {
+ 
+        return roomSet(code, roomData);
+    }).then(function(result) {
         setLoading(btn, false);
+        if (result && result.error) {
+            showMsg('create-msg','error','✗ ' + result.error);
+            return;
+        }
         showMsg('create-msg','success','✓ Oda oluşturuldu! Kod: ' + code);
         try {
             sessionStorage.setItem('w4p_room', JSON.stringify({
@@ -526,10 +674,10 @@ function doCreate() {
         }, 800);
     }).catch(function() {
         setLoading(btn, false);
-        showMsg('create-msg','error','✗ Firebase\'e bağlanılamadı.');
+        showMsg('create-msg','error','✗ Sunucuya bağlanılamadı.');
     });
 }
-
+ 
 // ── Helpers ───────────────────────────────────────────────────────
 function showMsg(id, type, text) {
     var el = document.getElementById(id);
@@ -540,13 +688,23 @@ function setLoading(btn, loading) {
     btn.disabled = loading;
     btn.classList.toggle('loading', loading);
 }
-
+ 
 // Enter tuşu desteği
 document.addEventListener('keydown', function(e) {
     if (e.key !== 'Enter') return;
+    // Modal açıksa şifreyi gönder
+    if (document.getElementById('pw-overlay').classList.contains('show')) {
+        submitPassword();
+        return;
+    }
     var activePanel = document.querySelector('.panel.active').id;
     if (activePanel === 'panel-join')   doJoin();
     if (activePanel === 'panel-create') doCreate();
+});
+ 
+// Overlay dışına tıklayınca modal kapat
+document.getElementById('pw-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closePasswordModal();
 });
 </script>
 </body>
