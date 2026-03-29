@@ -1,256 +1,196 @@
 <?php
-/**
- * Watch4Party — Room Backend
- * PHP 7.0+ uyumlu (düzeltilmiş sürüm)
+/*
+ * rooms.php — Watch4Party Oda Backend
+ * Odaları rooms_data.json dosyasına kaydeder.
+ * 
+ * Desteklenen işlemler (action parametresi):
+ *   get    → Tek oda getir (code gerekli)
+ *   set    → Oda oluştur / üzerine yaz
+ *   patch  → Oda güncelle (sadece gönderilen alanlar)
+ *   list   → Tüm aktif odaları listele
  */
 
-header('Content-Type: application/json; charset=UTF-8');
+header('Content-Type: application/json; charset=utf-8');
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type');
 
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { http_response_code(204); exit; }
-
-define('ROOMS_FILE', __DIR__ . '/rooms.txt');
-
-// ── rooms.txt yoksa oluştur ────────────────────────────────────────
-if (!file_exists(ROOMS_FILE)) {
-    file_put_contents(ROOMS_FILE, '{}');
-}
-
-function respond($ok, $data = [], $http = 200) {
-    http_response_code($http);
-    echo json_encode(array_merge(['ok' => $ok], $data), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(200);
     exit;
 }
 
-function sanitize($str, $max = 100) {
-    return mb_substr(trim(strip_tags($str)), 0, $max);
-}
+// ── Veri dosyası ──────────────────────────────────────────────────
+define('DATA_FILE', __DIR__ . '/rooms_data.json');
 
-function generateCode() {
-    $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-    $code  = '';
-    for ($i = 0; $i < 6; $i++) {
-        $code .= $chars[random_int(0, strlen($chars) - 1)];
-    }
-    return $code;
-}
-
-function loadRooms() {
-    if (!file_exists(ROOMS_FILE)) return [];
-    $content = file_get_contents(ROOMS_FILE);
-    if (!$content || trim($content) === '') return [];
-    $data = json_decode($content, true);
+function loadRooms(): array {
+    if (!file_exists(DATA_FILE)) return [];
+    $json = file_get_contents(DATA_FILE);
+    $data = json_decode($json, true);
     return is_array($data) ? $data : [];
 }
 
-function saveRooms($rooms) {
-    $result = file_put_contents(
-        ROOMS_FILE,
-        json_encode($rooms, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT),
-        LOCK_EX
-    );
-    if ($result === false) {
-        respond(false, ['message' => 'Dosyaya yazma hatası. rooms.txt izinlerini kontrol edin (chmod 666).'], 500);
-    }
+function saveRooms(array $rooms): void {
+    file_put_contents(DATA_FILE, json_encode($rooms, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE), LOCK_EX);
 }
 
-function getRoom($code) {
-    $rooms = loadRooms();
-    return isset($rooms[strtoupper(trim($code))]) ? $rooms[strtoupper(trim($code))] : null;
+function respond($data, int $code = 200): void {
+    http_response_code($code);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
-// ── Action ve body oku ─────────────────────────────────────────────
-$action = strtolower(isset($_GET['action']) ? $_GET['action'] : (isset($_POST['action']) ? $_POST['action'] : ''));
+function error(string $msg, int $code = 400): void {
+    respond(['error' => $msg], $code);
+}
 
-// JSON body oku — hem application/json hem form-data destekle
+// ── Parametreleri al ──────────────────────────────────────────────
+$action = trim($_GET['action'] ?? $_POST['action'] ?? '');
+$code   = strtoupper(trim($_GET['code'] ?? $_POST['code'] ?? ''));
+
+// POST body (JSON) de desteklenir
 $body = [];
-$rawInput = file_get_contents('php://input');
-if ($rawInput && trim($rawInput) !== '') {
-    $decoded = json_decode($rawInput, true);
-    if (is_array($decoded)) {
-        $body = $decoded;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $raw = file_get_contents('php://input');
+    if ($raw) {
+        $parsed = json_decode($raw, true);
+        if (is_array($parsed)) $body = $parsed;
+    }
+    // form-data ile de çalışsın
+    foreach ($_POST as $k => $v) {
+        if (!isset($body[$k])) $body[$k] = $v;
+    }
+    if (!$action && isset($body['action'])) $action = $body['action'];
+    if (!$code   && isset($body['code']))   $code   = strtoupper(trim($body['code']));
+}
+
+// ── Eski/pasif odaları temizle (7 günden eski) ────────────────────
+function cleanOldRooms(array &$rooms): void {
+    $cutoff = time() - 7 * 86400;
+    foreach ($rooms as $c => $room) {
+        $created = isset($room['created_at']) ? strtotime($room['created_at']) : 0;
+        if ($created && $created < $cutoff) unset($rooms[$c]);
     }
 }
 
-// Hem $body hem $_POST'tan değer alma yardımcısı
-function param($body, $key, $default = '') {
-    if (isset($body[$key]) && $body[$key] !== '') return $body[$key];
-    if (isset($_POST[$key]) && $_POST[$key] !== '') return $_POST[$key];
-    return $default;
+// ─────────────────────────────────────────────────────────────────
+// GET — Tek oda getir
+// ─────────────────────────────────────────────────────────────────
+if ($action === 'get') {
+    if (!$code) error('Oda kodu gerekli.');
+    $rooms = loadRooms();
+    if (!isset($rooms[$code])) respond(null);
+    $room = $rooms[$code];
+    // Şifreyi asla dönme (sadece type bilgisi yeterli)
+    unset($room['password']);
+    respond($room);
 }
 
-// ── POST: Oda oluştur ──────────────────────────────────────────────
-if ($action === 'create') {
-    $roomname = sanitize(param($body, 'roomname'), 60);
-    $username = sanitize(param($body, 'username'), 30);
-    $platform = sanitize(param($body, 'platform', 'YouTube'), 30);
-    $typeRaw  = param($body, 'type', 'public');
-    $type     = in_array($typeRaw, ['public', 'private']) ? $typeRaw : 'public';
-    $password = sanitize(param($body, 'password'), 50);
+// ─────────────────────────────────────────────────────────────────
+// SET — Oda oluştur / üzerine yaz
+// ─────────────────────────────────────────────────────────────────
+if ($action === 'set') {
+    if (!$code) error('Oda kodu gerekli.');
 
-    if (strlen($roomname) < 3) respond(false, ['message' => 'Oda adı en az 3 karakter olmalı.'], 400);
-    if (strlen($username) < 2) respond(false, ['message' => 'Kullanıcı adı en az 2 karakter olmalı.'], 400);
-    if ($type === 'private' && strlen($password) < 3)
-        respond(false, ['message' => 'Özel oda için şifre gerekli (min. 3 karakter).'], 400);
+    // Zorunlu alanları doğrula
+    $name     = trim($body['name']     ?? '');
+    $host     = trim($body['host']     ?? '');
+    $platform = trim($body['platform'] ?? 'Diğer');
+    $type     = ($body['type'] ?? 'public') === 'private' ? 'private' : 'public';
+    $password = trim($body['password'] ?? '');
+
+    if (strlen($name)  < 3) error('Oda adı en az 3 karakter olmalı.');
+    if (strlen($host)  < 2) error('Kullanıcı adı en az 2 karakter olmalı.');
+    if ($type === 'private' && strlen($password) < 3) error('Özel oda için şifre gerekli (min. 3 karakter).');
 
     $rooms = loadRooms();
-    $attempts = 0;
-    do {
-        $code = generateCode();
-        $attempts++;
-        if ($attempts > 100) respond(false, ['message' => 'Oda kodu üretilemedi.'], 500);
-    } while (isset($rooms[$code]));
+    cleanOldRooms($rooms);
+
+    // Kod çakışma kontrolü
+    if (isset($rooms[$code]) && ($rooms[$code]['active'] ?? false)) {
+        // Yeni kod üret — client da yapabilir ama burada da önlem al
+        error('Bu oda kodu zaten aktif. Lütfen tekrar dene.');
+    }
+
+    $members = [$host => true];
 
     $rooms[$code] = [
         'code'       => $code,
-        'name'       => $roomname,
-        'host'       => $username,
+        'name'       => $name,
+        'host'       => $host,
         'platform'   => $platform,
         'type'       => $type,
-        'password'   => $type === 'private' ? password_hash($password, PASSWORD_BCRYPT) : null,
+        'password'   => $type === 'private' ? $password : null, // hash client'ta yapılıyor ama sunucuda sakla
         'active'     => true,
-        'created_at' => date('Y-m-d H:i:s'),
-        'members'    => [$username],
+        'created_at' => date('c'),
+        'members'    => $members,
     ];
+
     saveRooms($rooms);
-
-    respond(true, [
-        'message' => 'Oda oluşturuldu!',
-        'code'    => $code,
-        'room'    => [
-            'code'     => $code,
-            'name'     => $roomname,
-            'host'     => $username,
-            'platform' => $platform,
-            'type'     => $type,
-        ],
-        'session'  => ['username' => $username, 'role' => 'host'],
-        'redirect' => 'watch/index.html?room=' . urlencode($code) . '&user=' . urlencode($username) . '&host=1',
-    ], 201);
+    $safe = $rooms[$code];
+    unset($safe['password']);
+    respond($safe);
 }
 
-// ── POST: Odaya katıl ──────────────────────────────────────────────
-if ($action === 'join') {
-    $code     = strtoupper(sanitize(param($body, 'code'), 10));
-    $username = sanitize(param($body, 'username'), 30);
-    $password = param($body, 'password', '');
-
-    if (!$code)                respond(false, ['message' => 'Oda kodu gerekli.'], 400);
-    if (strlen($username) < 2) respond(false, ['message' => 'Kullanıcı adı en az 2 karakter olmalı.'], 400);
-
+// ─────────────────────────────────────────────────────────────────
+// PATCH — Oda güncelle (üye ekle vs.)
+// ─────────────────────────────────────────────────────────────────
+if ($action === 'patch') {
+    if (!$code) error('Oda kodu gerekli.');
     $rooms = loadRooms();
-    $room  = isset($rooms[$code]) ? $rooms[$code] : null;
+    if (!isset($rooms[$code])) error('Oda bulunamadı.', 404);
 
-    if (!$room)           respond(false, ['message' => 'Geçersiz oda kodu: ' . htmlspecialchars($code)], 404);
-    if (!$room['active']) respond(false, ['message' => 'Bu oda artık aktif değil.'], 410);
-
-    // Özel oda şifre kontrolü
-    if ($room['type'] === 'private') {
-        if (!$password) respond(false, ['message' => 'Bu oda şifreli, lütfen şifre girin.'], 403);
-        if (!password_verify($password, $room['password'])) respond(false, ['message' => 'Yanlış şifre.'], 403);
-    }
-
-    if (!in_array($username, isset($room['members']) ? $room['members'] : [])) {
-        $rooms[$code]['members'][] = $username;
-        saveRooms($rooms);
-    }
-
-    respond(true, [
-        'message' => 'Odaya katıldın!',
-        'room'    => [
-            'code'     => $room['code'],
-            'name'     => $room['name'],
-            'host'     => $room['host'],
-            'platform' => $room['platform'],
-            'type'     => $room['type'],
-            'members'  => $rooms[$code]['members'],
-        ],
-        'session'  => ['username' => $username, 'role' => 'viewer'],
-        'redirect' => 'watch/index.html?room=' . urlencode($code) . '&user=' . urlencode($username),
-    ]);
-}
-
-// ── GET: Kod kontrol ───────────────────────────────────────────────
-if ($action === 'check') {
-    $code = strtoupper(sanitize(isset($_GET['code']) ? $_GET['code'] : '', 10));
-    if (!$code) respond(false, ['message' => 'Kod belirtilmedi.'], 400);
-
-    $room = getRoom($code);
-    if (!$room)           respond(false, ['message' => 'Geçersiz oda kodu.'], 404);
-    if (!$room['active']) respond(false, ['message' => 'Bu oda aktif değil.'], 410);
-
-    respond(true, ['room' => [
-        'code'     => $room['code'],
-        'name'     => $room['name'],
-        'host'     => $room['host'],
-        'platform' => $room['platform'],
-        'type'     => $room['type'],
-        'members'  => isset($room['members']) ? $room['members'] : [],
-    ]]);
-}
-
-// ── GET: Oda listesi ───────────────────────────────────────────────
-if ($action === 'list') {
-    $rooms = loadRooms();
-    $list  = [];
-    foreach ($rooms as $code => $room) {
-        if ($room['active'] && $room['type'] === 'public') {
-            $list[] = [
-                'code'     => $code,
-                'name'     => $room['name'],
-                'host'     => $room['host'],
-                'platform' => $room['platform'],
-                'members'  => count(isset($room['members']) ? $room['members'] : []),
-            ];
+    // Sadece izin verilen alanları güncelle
+    $allowed = ['members', 'active', 'name', 'platform'];
+    foreach ($allowed as $field) {
+        if (isset($body[$field])) {
+            $rooms[$code][$field] = $body[$field];
         }
     }
-    respond(true, ['rooms' => $list, 'total' => count($list)]);
-}
 
-// ── POST: Üye ekle ─────────────────────────────────────────────────
-if ($action === 'member_join') {
-    $code     = strtoupper(sanitize(param($body, 'code'), 10));
-    $username = sanitize(param($body, 'username'), 30);
-    if (!$code || !$username) respond(false, ['message' => 'Eksik parametre.'], 400);
-
-    $rooms = loadRooms();
-    if (!isset($rooms[$code])) respond(false, ['message' => 'Oda bulunamadı.'], 404);
-
-    if (!in_array($username, isset($rooms[$code]['members']) ? $rooms[$code]['members'] : [])) {
-        $rooms[$code]['members'][] = $username;
-        saveRooms($rooms);
-    }
-    respond(true, ['members' => $rooms[$code]['members'], 'host' => $rooms[$code]['host']]);
-}
-
-// ── POST: Üye çıkar ────────────────────────────────────────────────
-if ($action === 'member_leave') {
-    $code     = strtoupper(sanitize(param($body, 'code'), 10));
-    $username = sanitize(param($body, 'username'), 30);
-    if (!$code || !$username) respond(false, ['message' => 'Eksik parametre.'], 400);
-
-    $rooms = loadRooms();
-    if (!isset($rooms[$code])) respond(false, ['message' => 'Oda bulunamadı.'], 404);
-
-    $members = isset($rooms[$code]['members']) ? $rooms[$code]['members'] : [];
-    $rooms[$code]['members'] = array_values(array_filter($members, function($m) use ($username) {
-        return $m !== $username;
-    }));
     saveRooms($rooms);
-    respond(true, ['members' => $rooms[$code]['members']]);
+    $safe = $rooms[$code];
+    unset($safe['password']);
+    respond($safe);
 }
 
-// ── GET: Üye listesi ───────────────────────────────────────────────
-if ($action === 'members') {
-    $code = strtoupper(sanitize(isset($_GET['code']) ? $_GET['code'] : '', 10));
-    if (!$code) respond(false, ['message' => 'Kod gerekli.'], 400);
+// ─────────────────────────────────────────────────────────────────
+// CHECK_PASSWORD — Şifre doğrula (join sırasında)
+// ─────────────────────────────────────────────────────────────────
+if ($action === 'check_password') {
+    if (!$code) error('Oda kodu gerekli.');
+    $rooms = loadRooms();
+    if (!isset($rooms[$code])) error('Oda bulunamadı.', 404);
 
-    $room = getRoom($code);
-    if (!$room) respond(false, ['message' => 'Oda bulunamadı.'], 404);
-    respond(true, ['members' => isset($room['members']) ? $room['members'] : [], 'host' => $room['host']]);
+    $room = $rooms[$code];
+    if (($room['type'] ?? 'public') !== 'private') {
+        respond(['ok' => true]); // şifre gerektirmiyor
+    }
+
+    $submitted = trim($body['password'] ?? '');
+    // Şifre client'ta hashlanarak gönderilir (btoa("w4p_" + sifre))
+    if ($submitted === $room['password']) {
+        respond(['ok' => true]);
+    } else {
+        respond(['ok' => false, 'error' => 'Yanlış şifre.']);
+    }
 }
 
-respond(false, ['message' => 'Geçersiz action.'], 400);
+// ─────────────────────────────────────────────────────────────────
+// LIST — Tüm aktif odalar (opsiyonel, yönetim için)
+// ─────────────────────────────────────────────────────────────────
+if ($action === 'list') {
+    $rooms = loadRooms();
+    cleanOldRooms($rooms);
+    $result = [];
+    foreach ($rooms as $c => $room) {
+        if (!($room['active'] ?? false)) continue;
+        $safe = $room;
+        unset($safe['password']);
+        $result[$c] = $safe;
+    }
+    respond($result);
+}
 
+// ─────────────────────────────────────────────────────────────────
+error('Geçersiz işlem.', 400);
