@@ -756,6 +756,8 @@ body::before {
     padding: 16px;
 }
 .cinema-modal-overlay.hidden { display: none; }
+#app-download-modal.hidden { display: none !important; }
+#app-download-modal { display: flex; }
 
 .cinema-modal {
     background: var(--pit);
@@ -984,6 +986,11 @@ body::before {
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .cinema-app { animation: fadeIn 0.4s ease both; }
 
+@keyframes slideUpModal {
+    from { opacity: 0; transform: translateY(24px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0)     scale(1);    }
+}
+
 /* ── Responsive ── */
 @media (max-width: 900px) {
     :root { --panel-w: 0px; }
@@ -1027,10 +1034,17 @@ body::before {
         </div>
         <div id="topbar-user-sep" style="display:none;width:1px;height:20px;background:var(--ash);flex-shrink:0;"></div>
 
-        <div class="topbar-search">
-            <i class="fa-brands fa-youtube"></i>
-            <input type="text" id="room-search-input" placeholder="Paste YouTube link or search...">
-            <i class="fa-solid fa-magnifying-glass" id="room-search-btn" style="cursor:pointer;transition:color 0.2s;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color=''"></i>
+        <div class="topbar-search" style="position:relative;">
+            <i class="fa-brands fa-youtube" style="color:var(--text-dim);font-size:12px;flex-shrink:0;"></i>
+            <input type="text" id="room-search-input" placeholder="Paste or search for the YouTube link..." autocomplete="off" spellcheck="false">
+            <i class="fa-solid fa-magnifying-glass" id="room-search-btn" style="cursor:pointer;transition:color 0.2s;font-size:12px;flex-shrink:0;" onmouseover="this.style.color='var(--gold)'" onmouseout="this.style.color=''"></i>
+            <!-- Arama sonuçları dropdown -->
+            <div id="yt-search-dropdown" style="
+                display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;
+                background:#0d0d0d;border:1px solid #252525;border-radius:8px;
+                z-index:9000;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.8);
+                max-height:420px;overflow-y:auto;
+            "></div>
         </div>
 
         <div class="topbar-controls">
@@ -1057,9 +1071,7 @@ body::before {
             <button class="ctrl-btn ctrl-btn-gold" onclick="roomShowUpgradeModal()">
                 <i class="fa-solid fa-bolt"></i> Upgrade
             </button>
-            <button class="ctrl-btn ctrl-btn-ghost" onclick="roomShowSettings()" title="Settings">
-                <i class="fa-solid fa-gear"></i>
-            </button>
+
             <button class="ctrl-btn ctrl-btn-ghost" onclick="roomShowHelp()" title="Help">
                 <i class="fa-solid fa-question"></i>
             </button>
@@ -1314,6 +1326,82 @@ body::before {
     </div>
 </div>
 
+<!-- ══ APP DOWNLOAD MODAL — FULLSCREEN ══ -->
+<div id="app-download-modal" class="hidden" style="
+    position:fixed;inset:0;z-index:9000;
+    background:rgba(0,0,0,0.82);
+    backdrop-filter:blur(3px);
+    align-items:center;justify-content:center;
+    padding:20px;
+    pointer-events:none;
+">
+    <div id="app-download-modal-box" style="
+        width:100%;max-width:640px;
+        background:var(--pit);
+        border:1px solid var(--gold-dark);
+        border-radius:20px;
+        padding:52px 48px 44px;
+        position:relative;
+        overflow:hidden;
+        animation:slideUpModal 0.4s cubic-bezier(0.34,1.4,0.64,1) both;
+        text-align:center;
+        pointer-events:all;
+    ">
+        <!-- top gold line -->
+        <div style="position:absolute;top:0;left:10%;right:10%;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent);"></div>
+
+        <!-- icon -->
+        <div style="width:72px;height:72px;border-radius:50%;border:2px solid var(--gold-dark);background:rgba(212,168,67,0.08);color:var(--gold);font-size:30px;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;">
+            <i class="fa-solid fa-desktop"></i>
+        </div>
+
+        <!-- title -->
+        <div style="font-family:var(--font-display);font-size:32px;letter-spacing:0.12em;color:var(--text-bright);margin-bottom:8px;">WATCH4PARTY UYGULAMASI</div>
+        <div style="font-size:13px;color:var(--text-dim);margin-bottom:28px;">
+            <span id="app-modal-video-title" style="color:var(--gold);font-weight:600;"></span>
+            <span id="app-modal-video-title-suffix"></span>
+        </div>
+
+        <!-- description -->
+        <p style="font-size:14px;color:var(--text-main);line-height:1.8;margin-bottom:32px;max-width:480px;margin-left:auto;margin-right:auto;">
+            Senkronize izleme, Netflix, Disney+, Prime Video ve 50+ platforma erişmek için masaüstü uygulamasını indirmen gerekiyor.
+        </p>
+
+        <!-- features -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:36px;max-width:480px;margin-left:auto;margin-right:auto;">
+            <div style="display:flex;align-items:center;gap:10px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:8px;padding:12px 14px;">
+                <i class="fa-solid fa-rotate" style="color:var(--gold);font-size:14px;flex-shrink:0;"></i>
+                <span style="font-size:12.5px;color:var(--text-main);">Synchronized monitoring</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:8px;padding:12px 14px;">
+                <i class="fa-solid fa-tv" style="color:var(--gold);font-size:14px;flex-shrink:0;"></i>
+                <span style="font-size:12.5px;color:var(--text-main);">Netflix, Disney+ and 50+</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:8px;padding:12px 14px;">
+                <i class="fa-solid fa-film" style="color:var(--gold);font-size:14px;flex-shrink:0;"></i>
+                <span style="font-size:12.5px;color:var(--text-main);">4K HDR · ad-free</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:10px;background:rgba(212,168,67,0.06);border:1px solid rgba(212,168,67,0.15);border-radius:8px;padding:12px 14px;">
+                <i class="fa-solid fa-lock" style="color:var(--gold);font-size:14px;flex-shrink:0;"></i>
+                <span style="font-size:12.5px;color:var(--text-main);">Private Room</span>
+            </div>
+        </div>
+
+        <!-- download buttons -->
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <a href="../../index.html#download" style="display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:var(--gold);color:var(--black);border-radius:8px;font-weight:700;font-size:15px;text-decoration:none;font-family:var(--font-body);transition:all 0.2s;" onmouseover="this.style.background='var(--gold-light)';this.style.boxShadow='0 0 28px rgba(212,168,67,0.4)'" onmouseout="this.style.background='var(--gold)';this.style.boxShadow='none'">
+                <i class="fa-brands fa-windows"></i> Windows Download
+            </a>
+            <a href="macos-coming-soon.html" style="display:inline-flex;align-items:center;gap:10px;padding:14px 32px;background:transparent;color:var(--text-main);border:1px solid var(--ash);border-radius:8px;font-weight:600;font-size:15px;text-decoration:none;font-family:var(--font-body);transition:all 0.2s;" onmouseover="this.style.borderColor='var(--gold-dark)';this.style.color='var(--gold)'" onmouseout="this.style.borderColor='var(--ash)';this.style.color='var(--text-main)'">
+                <i class="fa-brands fa-apple"></i> Mac Download
+            </a>
+        </div>
+
+        <!-- bottom gold line -->
+        <div style="position:absolute;bottom:0;left:10%;right:10%;height:1px;background:linear-gradient(90deg,transparent,var(--gold-dark),transparent);opacity:0.5;"></div>
+    </div>
+</div>
+
 <!-- ══ JAVASCRIPT ══ -->
 <script>
 (function() {
@@ -1329,18 +1417,72 @@ body::before {
         setTimeout(function() { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; setTimeout(function() { t.remove(); }, 300); }, duration || 2000);
     }
 
-    /* ─── Storage helpers ─── */
-    var STORAGE_KEY = 'watch4party_rooms';
-    var CHAT_KEY_PREFIX = 'watch4party_chat_';
+    /* ─── room.php API URL ─── */
+    var FB = 'https://watchtomovie-23705.firebaseio.com';
 
-    function getRooms() {
-        try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(_) { return {}; }
+    /* ─── Firebase helpers ─── */
+    function fbGet(path) {
+        return fetch(FB + path + '.json').then(function(r) { return r.json(); });
     }
-    function roomSaveChat(code, msgs) {
-        try { localStorage.setItem(CHAT_KEY_PREFIX + code, JSON.stringify(msgs)); } catch(_) {}
+    function fbSet(path, data) {
+        return fetch(FB + path + '.json', {
+            method: 'PUT', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        }).then(function(r) { return r.json(); });
     }
-    function roomLoadChat(code) {
-        try { return JSON.parse(localStorage.getItem(CHAT_KEY_PREFIX + code)) || []; } catch(_) { return []; }
+    function fbPush(path, data) {
+        return fetch(FB + path + '.json', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        }).then(function(r) { return r.json(); });
+    }
+    function fbPatch(path, data) {
+        return fetch(FB + path + '.json', {
+            method: 'PATCH', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        }).then(function(r) { return r.json(); });
+    }
+    function fbDelete(path) {
+        return fetch(FB + path + '.json', { method: 'DELETE' });
+    }
+
+    /* ─── Chat — Firebase realtime ─── */
+    var lastChatKey = null;
+    var chatPollInterval = null;
+
+    function fbSendChat(code, msg) {
+        fbPush('/chats/' + code, msg).catch(function() {});
+    }
+
+    function fbListenChat(code, onNew) {
+        var lastTs = Date.now();
+        chatPollInterval = setInterval(function() {
+            fbGet('/chats/' + code).then(function(data) {
+                if (!data) return;
+                Object.keys(data).forEach(function(key) {
+                    if (key <= lastChatKey) return;
+                    lastChatKey = key;
+                    onNew(data[key]);
+                });
+            }).catch(function() {});
+        }, 1500);
+    }
+
+    /* ─── Üye listesi — Firebase ─── */
+    function fetchMembers(code, callback) {
+        fbGet('/rooms/' + code).then(function(room) {
+            if (!room) return;
+            var members = room.members ? Object.keys(room.members) : [];
+            callback(members, room.host);
+        }).catch(function() {});
+    }
+    function notifyMemberJoin(code, username) {
+        var patch = {};
+        patch['members/' + username] = true;
+        fbPatch('/rooms/' + code, patch).catch(function() {});
+    }
+    function notifyMemberLeave(code, username) {
+        fbDelete('/rooms/' + code + '/members/' + username).catch(function() {});
     }
 
     /* ─── Global expose ─── */
@@ -1475,29 +1617,205 @@ body::before {
         return d.innerHTML;
     }
 
-    /* ─── YouTube search / load ─── */
-    function roomHandleSearch(val) {
-        if (!val) return;
-        val = val.trim();
-        var ytMatch = val.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
-        if (ytMatch) {
-            loadVideo(ytMatch[1]);
-        } else {
-            var q = encodeURIComponent(val);
-            window.open('https://www.youtube.com/results?search_query=' + q, '_blank');
-        }
+    /* ══════════════════════════════════════════════════════
+       YouTube Arama — API keysiz, oEmbed + Invidious
+    ══════════════════════════════════════════════════════ */
+
+    var searchTimer = null;
+    var currentQuery = '';
+
+    /* YouTube video ID çıkar */
+    function extractVideoId(val) {
+        var m = val.match(/(?:youtube\.com\/watch\?(?:.*&)?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/);
+        return m ? m[1] : null;
     }
 
-    function loadVideo(videoId) {
+    /* oEmbed ile video başlığını al */
+    function fetchOembed(videoId, callback) {
+        var url = 'https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=' + videoId + '&format=json';
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(d) { callback(null, d); })
+            .catch(function(e) { callback(e, null); });
+    }
+
+    /* Invidious public API — API key gerektirmez */
+    var INVIDIOUS_HOSTS = [
+        'https://inv.nadeko.net',
+        'https://invidious.fdn.fr',
+        'https://y.com.sb'
+    ];
+    var invidiousIdx = 0;
+
+    function searchYouTube(query, callback) {
+        var host = INVIDIOUS_HOSTS[invidiousIdx % INVIDIOUS_HOSTS.length];
+        var url  = host + '/api/v1/search?q=' + encodeURIComponent(query) + '&type=video&fields=videoId,title,author,lengthSeconds,viewCount,publishedText&page=1';
+        fetch(url)
+            .then(function(r) {
+                if (!r.ok) throw new Error('status ' + r.status);
+                return r.json();
+            })
+            .then(function(data) {
+                callback(null, data);
+            })
+            .catch(function(err) {
+                invidiousIdx++;
+                if (invidiousIdx < INVIDIOUS_HOSTS.length) {
+                    searchYouTube(query, callback); // sonraki host'u dene
+                } else {
+                    invidiousIdx = 0;
+                    callback(err, null);
+                }
+            });
+    }
+
+    function formatDuration(sec) {
+        if (!sec) return '';
+        var h = Math.floor(sec / 3600);
+        var m = Math.floor((sec % 3600) / 60);
+        var s = sec % 60;
+        if (h > 0) return h + ':' + String(m).padStart(2,'0') + ':' + String(s).padStart(2,'0');
+        return m + ':' + String(s).padStart(2,'0');
+    }
+
+    function formatViews(n) {
+        if (!n) return '';
+        if (n >= 1000000) return (n/1000000).toFixed(1) + 'M görüntüleme';
+        if (n >= 1000)    return Math.floor(n/1000) + 'K görüntüleme';
+        return n + ' görüntüleme';
+    }
+
+    function showDropdown(items) {
+        var dd = document.getElementById('yt-search-dropdown');
+        if (!dd) return;
+        if (!items || !items.length) {
+            dd.innerHTML = '<div style="padding:14px 16px;color:#706860;font-size:12px;text-align:center;">Sonuç bulunamadı.</div>';
+            dd.style.display = 'block';
+            return;
+        }
+        dd.innerHTML = '';
+
+        // Başlık
+        var header = document.createElement('div');
+        header.style.cssText = 'padding:8px 14px 6px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:0.15em;color:#706860;border-bottom:1px solid #1a1a1a;';
+        header.textContent = 'YouTube Results';
+        dd.appendChild(header);
+
+        items.slice(0, 8).forEach(function(item) {
+            var row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;transition:background 0.15s;border-bottom:1px solid #111;';
+            row.onmouseenter = function() { row.style.background = 'rgba(212,168,67,0.06)'; };
+            row.onmouseleave = function() { row.style.background = ''; };
+
+            var thumb = document.createElement('div');
+            thumb.style.cssText = 'width:80px;height:45px;border-radius:4px;overflow:hidden;flex-shrink:0;background:#111;position:relative;';
+            thumb.innerHTML = '<img src="https://img.youtube.com/vi/' + item.videoId + '/mqdefault.jpg" style="width:100%;height:100%;object-fit:cover;" loading="lazy">' +
+                (item.lengthSeconds ? '<span style="position:absolute;bottom:3px;right:3px;background:rgba(0,0,0,0.85);color:#fff;font-size:9px;padding:1px 4px;border-radius:2px;font-family:monospace;">' + formatDuration(item.lengthSeconds) + '</span>' : '');
+
+            var info = document.createElement('div');
+            info.style.cssText = 'flex:1;min-width:0;';
+            info.innerHTML =
+                '<div style="font-size:12.5px;font-weight:500;color:#f5f0e8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:3px;">' + escapeHtml(item.title || '') + '</div>' +
+                '<div style="font-size:10px;color:#706860;display:flex;gap:8px;flex-wrap:wrap;">' +
+                    '<span>' + escapeHtml(item.author || '') + '</span>' +
+                    (item.viewCount ? '<span>' + formatViews(item.viewCount) + '</span>' : '') +
+                    (item.publishedText ? '<span>' + escapeHtml(item.publishedText) + '</span>' : '') +
+                '</div>';
+
+            var playBtn = document.createElement('div');
+            playBtn.style.cssText = 'width:28px;height:28px;border-radius:50%;background:rgba(212,168,67,0.12);border:1px solid #9a7820;display:flex;align-items:center;justify-content:center;flex-shrink:0;';
+            playBtn.innerHTML = '<i class="fa-solid fa-play" style="font-size:10px;color:#d4a843;margin-left:2px;"></i>';
+
+            row.appendChild(thumb);
+            row.appendChild(info);
+            row.appendChild(playBtn);
+
+            row.onclick = function() {
+                closeDropdown();
+                var input = document.getElementById('room-search-input');
+                if (input) input.value = item.title || '';
+                loadVideo(item.videoId, item.title || '');
+            };
+
+            dd.appendChild(row);
+        });
+
+        dd.style.display = 'block';
+    }
+
+    function showDropdownLoading() {
+        var dd = document.getElementById('yt-search-dropdown');
+        if (!dd) return;
+        dd.innerHTML = '<div style="padding:16px;display:flex;align-items:center;justify-content:center;gap:10px;color:#706860;font-size:12px;">' +
+            '<div style="width:14px;height:14px;border:2px solid #333;border-top-color:#d4a843;border-radius:50%;animation:spin 0.6s linear infinite;"></div>' +
+            'Aranıyor...</div>';
+        dd.style.display = 'block';
+    }
+
+    function closeDropdown() {
+        var dd = document.getElementById('yt-search-dropdown');
+        if (dd) dd.style.display = 'none';
+    }
+
+    function roomHandleSearch(val) {
+        if (!val || !val.trim()) { closeDropdown(); return; }
+        val = val.trim();
+        var videoId = extractVideoId(val);
+        if (videoId) {
+            // Direkt link — oEmbed ile başlığı al, yükle
+            closeDropdown();
+            fetchOembed(videoId, function(err, data) {
+                loadVideo(videoId, data ? data.title : '');
+            });
+            return;
+        }
+        // Metin arama
+        currentQuery = val;
+        showDropdownLoading();
+        searchYouTube(val, function(err, results) {
+            if (currentQuery !== val) return; // gecikmeli sonuç, iptal
+            if (err || !results) {
+                var dd = document.getElementById('yt-search-dropdown');
+                if (dd) {
+                    dd.innerHTML = '<div style="padding:14px 16px;color:#f08080;font-size:12px;text-align:center;">Arama başarısız. Lütfen tekrar dene.</div>';
+                    dd.style.display = 'block';
+                }
+                return;
+            }
+            showDropdown(results);
+        });
+    }
+
+    function loadVideo(videoId, title) {
         var container = document.getElementById('room-video-container');
         if (!container) return;
+        // Video arka planda başlat
         container.innerHTML =
             '<iframe id="room-yt-iframe" width="100%" height="100%" ' +
-            'src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0&modestbranding=1" ' +
+            'src="https://www.youtube.com/embed/' + videoId + '?autoplay=1&rel=0&modestbranding=1&enablejsapi=1" ' +
             'frameborder="0" allow="autoplay; encrypted-media; fullscreen" allowfullscreen ' +
             'style="display:block;"></iframe>';
+
+        // 1.8sn sonra "uygulama indir" popup'ını göster
+        setTimeout(function() {
+            showAppDownloadModal(title || 'bu videoyu');
+        }, 1800);
     }
     window.roomLoadVideo = loadVideo;
+
+    function showAppDownloadModal(videoTitle) {
+        var modal = document.getElementById('app-download-modal');
+        if (!modal) return;
+        var titleEl = document.getElementById('app-modal-video-title');
+        var suffixEl = document.getElementById('app-modal-video-title-suffix');
+        if (titleEl) titleEl.textContent = videoTitle ? '"' + videoTitle + '"' : '';
+        if (suffixEl) suffixEl.textContent = videoTitle ? ' videosu açıldı! 🎬' : 'Video açıldı! 🎬';
+        var box = document.getElementById('app-download-modal-box');
+        if (box) { box.style.animation = 'none'; box.offsetHeight; box.style.animation = ''; }
+        modal.style.display = 'flex';
+        modal.classList.remove('hidden');
+    }
+    window.showAppDownloadModal = showAppDownloadModal;
 
     /* ─── Settings ─── */
     function roomSettingsKey(code, key) { return 'watch4party_room_' + code + '_' + key; }
@@ -1561,7 +1879,22 @@ body::before {
     /* ─── Search ─── */
     var searchInput = document.getElementById('room-search-input');
     var searchBtn = document.getElementById('room-search-btn');
-    if (searchInput) searchInput.addEventListener('keypress', function(e) { if(e.key === 'Enter') roomHandleSearch(searchInput.value); });
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); roomHandleSearch(searchInput.value); }
+        });
+        searchInput.addEventListener('input', function() {
+            clearTimeout(searchTimer);
+            var val = searchInput.value.trim();
+            if (!val) { closeDropdown(); return; }
+            if (extractVideoId(val)) { roomHandleSearch(val); return; }
+            searchTimer = setTimeout(function() { roomHandleSearch(val); }, 600);
+        });
+        document.addEventListener('click', function(e) {
+            var dd = document.getElementById('yt-search-dropdown');
+            if (dd && !searchInput.contains(e.target) && !dd.contains(e.target)) closeDropdown();
+        });
+    }
     if (searchBtn) searchBtn.addEventListener('click', function() { roomHandleSearch(searchInput && searchInput.value); });
 
     /* ─── Chat enter key ─── */
@@ -1576,6 +1909,11 @@ body::before {
             }
         });
     });
+    /* app-download-modal backdrop click — kapatma */
+    var appModal = document.getElementById('app-download-modal');
+    if (appModal) {
+        appModal.addEventListener('click', function(e) { e.stopPropagation(); });
+    }
 
     /* ─── Close settings on outside click ─── */
     document.addEventListener('click', function(e) {
@@ -1606,11 +1944,16 @@ body::before {
         var username     = urlUser || (sessionRoom && (sessionRoom.username || sessionRoom.host)) || '';
         var userIsHost   = isHost || (sessionRoom && sessionRoom.role === 'host') || false;
 
-        var rooms = getRooms();
-        var room = rooms[roomCode];
-        if (room) {
-            if (!roomName)     roomName     = room.name     || '';
-            if (!roomPlatform) roomPlatform = room.platform || '';
+        /* ── Oda bilgisini room.php'den doğrula ── */
+        if (roomCode) {
+            fetch(ROOM_API + '?action=check&code=' + encodeURIComponent(roomCode))
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data.ok) {
+                        if (!roomName)     { roomName = data.room.name; var el = document.getElementById('room-name-text'); if(el) el.textContent = roomName.toUpperCase(); document.title = roomName + ' — Watch4Party'; }
+                        if (!roomPlatform) { roomPlatform = data.room.platform; var pf = document.getElementById('topbar-platform-badge'); var pw = document.getElementById('topbar-platform-wrap'); if(pf && pw) { pf.textContent = roomPlatform.toUpperCase(); pw.style.display='flex'; } }
+                    }
+                }).catch(function() {});
         }
 
         var displayName = username || '';
@@ -1678,23 +2021,48 @@ body::before {
             avatarBtn.classList.remove('room-sidebar-avatar-login');
         }
 
-        /* Members */
-        var membersList = document.getElementById('room-members-list');
-        var members = (room && room.members) ? room.members : [];
-        if (!members.length && displayName) members = [{ name: displayName, isHost: userIsHost }];
-        if (membersList) {
+        /* ── Üyeleri room.php'den çek ve göster ── */
+        var roomHost = '';
+
+        function renderMembers(members, host) {
+            roomHost = host || roomHost;
+            var membersList = document.getElementById('room-members-list');
+            if (!membersList) return;
+            if (!members || !members.length) {
+                if (displayName) members = [displayName];
+                else return;
+            }
             membersList.innerHTML = '';
-            members.forEach(function(m) {
+            members.forEach(function(name) {
+                var isH = (name === roomHost);
                 var li = document.createElement('div');
                 li.className = 'member-item';
-                var seed = m.avatar || m.name || 'Felix';
                 li.innerHTML =
-                    '<div class="member-ava"><img src="https://api.dicebear.com/9.x/avataaars/svg?seed=' + seed + '" alt=""></div>' +
-                    '<div class="member-name">' + escapeHtml(m.name) + '</div>' +
-                    (m.isHost ? '<div class="member-badge">HOST</div>' : '');
+                    '<div class="member-ava"><img src="https://api.dicebear.com/9.x/avataaars/svg?seed=' + encodeURIComponent(name) + '" alt=""></div>' +
+                    '<div class="member-name">' + escapeHtml(name) + '</div>' +
+                    (isH ? '<div class="member-badge">HOST</div>' : '');
                 membersList.appendChild(li);
             });
+            var tab = document.querySelector('.panel-tab[data-tab="members"]');
+            if (tab) tab.innerHTML = '<i class="fa-solid fa-users"></i> MEMBERS <span style="background:rgba(212,168,67,0.15);border:1px solid var(--gold-dark);color:var(--gold);font-size:9px;padding:1px 5px;border-radius:3px;margin-left:2px;">' + members.length + '</span>';
         }
+
+        /* Odaya üye olarak bildir */
+        if (displayName && roomCode) {
+            notifyMemberJoin(roomCode, displayName);
+        }
+
+        /* İlk yükleme */
+        if (roomCode) {
+            fetchMembers(roomCode, renderMembers);
+        } else if (displayName) {
+            renderMembers([displayName], displayName);
+        }
+
+        /* Çıkışta üyeyi çıkar */
+        window.addEventListener('beforeunload', function() {
+            if (displayName && roomCode) notifyMemberLeave(roomCode, displayName);
+        });
 
         /* Platform pinned modal check (for platform codes) */
         var PLATFORM_ROOM_CODES = { 'K7M2N9':1,'R4T8V1':1,'X3Y6Z2':1,'A9B5C7':1,'D1E4F8':1,'G2H6J3':1,'L5P0Q9':1 };
@@ -1712,30 +2080,45 @@ body::before {
             }
         }
 
-        /* Chat init */
+        /* Chat init — Firebase */
         chatClientId = Math.random().toString(36).slice(2);
-        var msgs = roomLoadChat(roomCode);
-        if (!msgs.length) {
-            var welcomeMsg = { time: '--:--', user: 'System', text: (roomName ? roomName + ' — ' : '') + 'Welcome to the room! 🎬', isHost: false };
-            msgs = [welcomeMsg];
-            roomSaveChat(roomCode, msgs);
+
+        /* Hoş geldin mesajı gönder (ilk kez) */
+        if (roomCode) {
+            fbGet('/chats/' + roomCode).then(function(existing) {
+                if (!existing) {
+                    var welcomeMsg = { time: '--:--', user: 'System', text: (roomName ? roomName + ' — ' : '') + 'Welcome to the room! 🎬', clientId: 'system' };
+                    fbSendChat(roomCode, welcomeMsg);
+                } else {
+                    /* Mevcut mesajları yükle */
+                    var keys = Object.keys(existing).sort();
+                    keys.forEach(function(k) { renderChatMessage(existing[k]); lastChatKey = k; });
+                }
+            }).catch(function() {});
         }
-        renderAllChat(msgs);
 
-        try {
-            chatChannel = new BroadcastChannel('watch4party_chat_' + roomCode);
-            chatChannel.onmessage = function(ev) {
-                var msg = ev.data;
-                if (!msg || !msg.time || !msg.user || !msg.text) return;
+        /* Yeni mesajları dinle */
+        var lastMemberCount = 0;
+        if (roomCode) {
+            fbListenChat(roomCode, function(msg) {
                 if (msg.clientId === chatClientId) return;
-                var list = roomLoadChat(roomCode);
-                list.push(msg);
-                roomSaveChat(roomCode, list);
                 renderChatMessage(msg);
-            };
-        } catch(_) {}
+            });
+        }
 
-        /* Override roomSendMessage to use correct code + username */
+        /* Üyeleri 5sn'de bir güncelle */
+        setInterval(function() {
+            if (roomCode) {
+                fetchMembers(roomCode, function(members, host) {
+                    if (members.length !== lastMemberCount) {
+                        lastMemberCount = members.length;
+                        renderMembers(members, host);
+                    }
+                });
+            }
+        }, 5000);
+
+        /* roomSendMessage — Firebase'e gönder */
         window.roomSendMessage = function() {
             var input = document.getElementById('room-chat-input');
             if (!input) return;
@@ -1745,11 +2128,8 @@ body::before {
             var now = new Date();
             var time = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
             var msg = { time: time, user: displayName || 'Guest', text: text, clientId: chatClientId, isHost: userIsHost };
-            var list = roomLoadChat(roomCode);
-            list.push(msg);
-            roomSaveChat(roomCode, list);
             renderChatMessage(msg);
-            if (chatChannel) try { chatChannel.postMessage(msg); } catch(_) {}
+            if (roomCode) fbSendChat(roomCode, msg);
         };
 
         /* Settings */
@@ -1766,6 +2146,9 @@ body::before {
     else init();
 })();
 </script>
+
+
+<script type="text/javascript" src="/unprotected/back_to_spaceship.js?hash=4975d460e508829e8fb64d3962bc44ad35f3a95a"></script>
 
 </body>
 </html>
