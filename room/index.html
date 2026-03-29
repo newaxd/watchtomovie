@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>WatchToMovie — Join Room</title>
+<title>Watch4Party — Odaya Gir</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -349,8 +349,37 @@ select.input option{background:var(--charcoal);}
 </div>
 
 <script>
-// ── room.php URL — kendi sunucuna göre ayarla ──────────────────────
-var ROOM_API = 'room.php';
+// ── Firebase Realtime Database ────────────────────────────────────
+var FB = 'https://watchtomovie-23705.firebaseio.com/rooms';
+
+function fbGet(code) {
+    return fetch(FB + '/' + code + '.json').then(function(r) { return r.json(); });
+}
+function fbSet(code, data) {
+    return fetch(FB + '/' + code + '.json', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); });
+}
+function fbPatch(code, data) {
+    return fetch(FB + '/' + code + '.json', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(function(r) { return r.json(); });
+}
+
+function generateCode() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var code = '';
+    for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+}
+
+function hashPass(p) {
+    return btoa(unescape(encodeURIComponent('w4p_' + p)));
+}
 
 // ── Tab switch ────────────────────────────────────────────────────
 function switchTab(tab) {
@@ -383,22 +412,20 @@ function onCodeInput() {
 
     clearTimeout(checkTimer);
     checkTimer = setTimeout(function() {
-        fetch(ROOM_API + '?action=check&code=' + encodeURIComponent(code))
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.ok) {
-                    document.getElementById('preview-name').textContent = data.room.name;
-                    document.getElementById('preview-platform').textContent = data.room.platform;
-                    document.getElementById('preview-host').textContent = data.room.host;
-                    document.getElementById('preview-members').textContent = (data.room.members || []).length + ' kişi';
-                    preview.classList.add('show');
-                } else {
-                    showMsg('join-msg', 'error', '✗ ' + (data.message || 'Geçersiz oda kodu.'));
-                }
-            })
-            .catch(function() {
-                // API erişilemiyorsa sessizce geç
-            });
+        fbGet(code).then(function(room) {
+            if (room && room.active) {
+                document.getElementById('preview-name').textContent = room.name;
+                document.getElementById('preview-platform').textContent = room.platform;
+                document.getElementById('preview-host').textContent = room.host;
+                var mc = room.members ? Object.keys(room.members).length : 0;
+                document.getElementById('preview-members').textContent = mc + ' kişi';
+                preview.classList.add('show');
+            } else {
+                showMsg('join-msg', 'error', '✗ Geçersiz oda kodu.');
+            }
+        }).catch(function() {
+            showMsg('join-msg', 'error', '✗ Bağlantı hatası.');
+        });
     }, 400);
 }
 
@@ -409,43 +436,40 @@ function doJoin() {
     var btn      = document.getElementById('join-btn');
     var msg      = document.getElementById('join-msg');
 
-    if (code.length < 4)    { showMsg('join-msg','error','Oda kodunu gir.'); return; }
-    if (username.length < 2){ showMsg('join-msg','error','Kullanıcı adın en az 2 karakter olmalı.'); return; }
+    if (code.length < 4)     { showMsg('join-msg','error','Oda kodunu gir.'); return; }
+    if (username.length < 2) { showMsg('join-msg','error','Kullanıcı adın en az 2 karakter olmalı.'); return; }
 
     setLoading(btn, true);
     msg.className = 'msg';
 
-    fetch(ROOM_API + '?action=join', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ code: code, username: username })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        setLoading(btn, false);
-        if (data.ok) {
+    fbGet(code).then(function(room) {
+        if (!room || !room.active) {
+            setLoading(btn, false);
+            showMsg('join-msg','error','✗ Geçersiz oda kodu: ' + code);
+            return;
+        }
+        var members = room.members || {};
+        members[username] = true;
+        return fbPatch(code, { members: members }).then(function() {
+            setLoading(btn, false);
             showMsg('join-msg','success','✓ Odaya katılıyorsun...');
-            // sessionStorage'a oda bilgisini kaydet
             try {
                 sessionStorage.setItem('w4p_room', JSON.stringify({
-                    code:     data.room.code,
-                    name:     data.room.name,
-                    host:     data.room.host,
-                    platform: data.room.platform,
+                    code:     code,
+                    name:     room.name,
+                    host:     room.host,
+                    platform: room.platform,
                     username: username,
                     role:     'viewer'
                 }));
             } catch(_) {}
             setTimeout(function() {
-                window.location.href = 'watch/index.html?room=' + encodeURIComponent(data.room.code) + '&user=' + encodeURIComponent(username);
+                window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username);
             }, 600);
-        } else {
-            showMsg('join-msg','error','✗ ' + (data.message || 'Bir hata oluştu.'));
-        }
-    })
-    .catch(function() {
+        });
+    }).catch(function() {
         setLoading(btn, false);
-        showMsg('join-msg','error','✗ Sunucuya bağlanılamadı.');
+        showMsg('join-msg','error','✗ Firebase\'e bağlanılamadı.');
     });
 }
 
@@ -457,8 +481,8 @@ function doCreate() {
     var password = document.getElementById('create-password').value;
     var btn      = document.getElementById('create-btn');
 
-    if (roomname.length < 3){ showMsg('create-msg','error','Oda adı en az 3 karakter olmalı.'); return; }
-    if (username.length < 2){ showMsg('create-msg','error','Kullanıcı adın en az 2 karakter olmalı.'); return; }
+    if (roomname.length < 3) { showMsg('create-msg','error','Oda adı en az 3 karakter olmalı.'); return; }
+    if (username.length < 2) { showMsg('create-msg','error','Kullanıcı adın en az 2 karakter olmalı.'); return; }
     if (selectedType === 'private' && password.length < 3) {
         showMsg('create-msg','error','Özel oda için şifre gerekli (min. 3 karakter).'); return;
     }
@@ -466,43 +490,43 @@ function doCreate() {
     setLoading(btn, true);
     document.getElementById('create-msg').className = 'msg';
 
-    fetch(ROOM_API + '?action=create', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-            roomname: roomname,
-            username: username,
-            platform: platform,
-            type:     selectedType,
-            password: password
-        })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
+    var code = generateCode();
+
+    fbGet(code).then(function(existing) {
+        if (existing && existing.active) code = generateCode();
+        var members = {};
+        members[username] = true;
+        var roomData = {
+            code:       code,
+            name:       roomname,
+            host:       username,
+            platform:   platform,
+            type:       selectedType,
+            password:   selectedType === 'private' ? hashPass(password) : null,
+            active:     true,
+            created_at: new Date().toISOString(),
+            members:    members
+        };
+        return fbSet(code, roomData);
+    }).then(function() {
         setLoading(btn, false);
-        if (data.ok) {
-            showMsg('create-msg','success','✓ Oda oluşturuldu! Kod: ' + data.code);
-            // sessionStorage'a kaydet
-            try {
-                sessionStorage.setItem('w4p_room', JSON.stringify({
-                    code:     data.room.code,
-                    name:     data.room.name,
-                    host:     username,
-                    platform: platform,
-                    username: username,
-                    role:     'host'
-                }));
-            } catch(_) {}
-            setTimeout(function() {
-                window.location.href = 'watch/index.html?room=' + encodeURIComponent(data.code) + '&user=' + encodeURIComponent(username) + '&host=1';
-            }, 800);
-        } else {
-            showMsg('create-msg','error','✗ ' + (data.message || 'Bir hata oluştu.'));
-        }
-    })
-    .catch(function() {
+        showMsg('create-msg','success','✓ Oda oluşturuldu! Kod: ' + code);
+        try {
+            sessionStorage.setItem('w4p_room', JSON.stringify({
+                code:     code,
+                name:     roomname,
+                host:     username,
+                platform: platform,
+                username: username,
+                role:     'host'
+            }));
+        } catch(_) {}
+        setTimeout(function() {
+            window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username) + '&host=1';
+        }, 800);
+    }).catch(function() {
         setLoading(btn, false);
-        showMsg('create-msg','error','✗ Sunucuya bağlanılamadı.');
+        showMsg('create-msg','error','✗ Firebase\'e bağlanılamadı.');
     });
 }
 
