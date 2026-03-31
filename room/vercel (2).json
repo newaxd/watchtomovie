@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/room.php", "destination": "/api/room" },
+    { "source": "/room.php/(.*)", "destination": "/api/room" }
+  ]
+}
