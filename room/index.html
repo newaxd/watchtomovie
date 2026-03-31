@@ -349,15 +349,39 @@ select.input option{background:var(--charcoal);}
 </div>
 
 <script>
-// ── localStorage tabanlı oda yönetimi (backend yok) ───────────────
-var ROOMS_KEY = 'w4p_rooms';
+// ── JSONBin.io backend — ücretsiz, kayıt gerektirmez ──────────────
+// 1. https://jsonbin.io adresine git
+// 2. Ücretsiz hesap aç
+// 3. Yeni bir Bin oluştur, içine {} yaz
+// 4. BIN_ID ve API_KEY'i aşağıya yapıştır
+var BIN_ID  = 'BURAYA_BIN_ID';   // örn: 64f3a1b2e3b4c5d6e7f8a9b0
+var API_KEY = 'BURAYA_API_KEY';  // örn: $2a$10$...
+var BIN_URL = 'https://api.jsonbin.io/v3/b/' + BIN_ID;
 
-function loadRooms() {
-    try { return JSON.parse(localStorage.getItem(ROOMS_KEY) || '{}'); } catch(_) { return {}; }
+// ── JSONBin yardımcıları ──────────────────────────────────────────
+function loadRooms(cb) {
+    fetch(BIN_URL + '/latest', {
+        headers: { 'X-Master-Key': API_KEY }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) { cb(null, data.record || {}); })
+    .catch(function(e)   { cb(e, {}); });
 }
-function saveRooms(rooms) {
-    localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms));
+
+function saveRooms(rooms, cb) {
+    fetch(BIN_URL, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Master-Key': API_KEY
+        },
+        body: JSON.stringify(rooms)
+    })
+    .then(function(r) { return r.json(); })
+    .then(function()  { if (cb) cb(null); })
+    .catch(function(e){ if (cb) cb(e); });
 }
+
 function generateCode() {
     var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     var code = '';
@@ -396,18 +420,20 @@ function onCodeInput() {
 
     clearTimeout(checkTimer);
     checkTimer = setTimeout(function() {
-        var rooms = loadRooms();
-        var room = rooms[code];
-        if (room && room.active) {
-            document.getElementById('preview-name').textContent = room.name;
-            document.getElementById('preview-platform').textContent = room.platform;
-            document.getElementById('preview-host').textContent = room.host;
-            document.getElementById('preview-members').textContent = (room.members || []).length + ' person';
-            preview.classList.add('show');
-        } else {
-            showMsg('join-msg', 'error', '✗ Invalid room code.');
-        }
-    }, 300);
+        loadRooms(function(err, rooms) {
+            if (err) return;
+            var room = rooms[code];
+            if (room && room.active) {
+                document.getElementById('preview-name').textContent = room.name;
+                document.getElementById('preview-platform').textContent = room.platform;
+                document.getElementById('preview-host').textContent = room.host;
+                document.getElementById('preview-members').textContent = (room.members || []).length + ' person';
+                preview.classList.add('show');
+            } else {
+                showMsg('join-msg', 'error', '✗ Invalid room code.');
+            }
+        });
+    }, 400);
 }
 
 // ── JOIN ──────────────────────────────────────────────────────────
@@ -416,30 +442,35 @@ function doJoin() {
     var username = document.getElementById('join-username').value.trim();
     var btn      = document.getElementById('join-btn');
 
-    if (code.length < 4)     { showMsg('join-msg','error','Enter your room code.'); return; }
-    if (username.length < 2) { showMsg('join-msg','error','Your username must be at least two characters long.'); return; }
+    if (code.length < 4)    { showMsg('join-msg','error','Enter your room code.'); return; }
+    if (username.length < 2){ showMsg('join-msg','error','Your username must be at least two characters long.'); return; }
 
-    var rooms = loadRooms();
-    var room  = rooms[code];
+    setLoading(btn, true);
 
-    if (!room)        { showMsg('join-msg','error','✗ Invalid room code: ' + code); return; }
-    if (!room.active) { showMsg('join-msg','error','✗ This room is no longer active.'); return; }
+    loadRooms(function(err, rooms) {
+        if (err) { setLoading(btn, false); showMsg('join-msg','error','✗ Could not connect to the server.'); return; }
 
-    if (!room.members.includes(username)) {
-        rooms[code].members.push(username);
-        saveRooms(rooms);
-    }
+        var room = rooms[code];
+        if (!room)        { setLoading(btn, false); showMsg('join-msg','error','✗ Invalid room code: ' + code); return; }
+        if (!room.active) { setLoading(btn, false); showMsg('join-msg','error','✗ This room is no longer active.'); return; }
 
-    showMsg('join-msg','success','✓ Odaya katılıyorsun...');
-    try {
-        sessionStorage.setItem('w4p_room', JSON.stringify({
-            code: room.code, name: room.name, host: room.host,
-            platform: room.platform, username: username, role: 'viewer'
-        }));
-    } catch(_) {}
-    setTimeout(function() {
-        window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username);
-    }, 600);
+        if (!room.members.includes(username)) rooms[code].members.push(username);
+
+        saveRooms(rooms, function(err2) {
+            setLoading(btn, false);
+            if (err2) { showMsg('join-msg','error','✗ Could not connect to the server.'); return; }
+            showMsg('join-msg','success','✓ Odaya katılıyorsun...');
+            try {
+                sessionStorage.setItem('w4p_room', JSON.stringify({
+                    code: room.code, name: room.name, host: room.host,
+                    platform: room.platform, username: username, role: 'viewer'
+                }));
+            } catch(_) {}
+            setTimeout(function() {
+                window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username);
+            }, 600);
+        });
+    });
 }
 
 // ── CREATE ────────────────────────────────────────────────────────
@@ -450,39 +481,48 @@ function doCreate() {
     var password = document.getElementById('create-password').value;
     var btn      = document.getElementById('create-btn');
 
-    if (roomname.length < 3) { showMsg('create-msg','error','The room name must be at least 3 characters long.'); return; }
-    if (username.length < 2) { showMsg('create-msg','error','Your username must be at least two characters long.'); return; }
+    if (roomname.length < 3){ showMsg('create-msg','error','The room name must be at least 3 characters long.'); return; }
+    if (username.length < 2){ showMsg('create-msg','error','Your username must be at least two characters long.'); return; }
     if (selectedType === 'private' && password.length < 3) {
         showMsg('create-msg','error','A password is required for the private room (minimum 3 characters).'); return;
     }
 
-    var rooms = loadRooms();
-    var code;
-    do { code = generateCode(); } while (rooms[code]);
+    setLoading(btn, true);
+    document.getElementById('create-msg').className = 'msg';
 
-    rooms[code] = {
-        code:       code,
-        name:       roomname,
-        host:       username,
-        platform:   platform,
-        type:       selectedType,
-        password:   selectedType === 'private' ? password : null,
-        active:     true,
-        created_at: new Date().toISOString(),
-        members:    [username]
-    };
-    saveRooms(rooms);
+    loadRooms(function(err, rooms) {
+        if (err) { setLoading(btn, false); showMsg('create-msg','error','✗ Could not connect to the server.'); return; }
 
-    showMsg('create-msg','success','✓ Room created! Code: ' + code);
-    try {
-        sessionStorage.setItem('w4p_room', JSON.stringify({
-            code: code, name: roomname, host: username,
-            platform: platform, username: username, role: 'host'
-        }));
-    } catch(_) {}
-    setTimeout(function() {
-        window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username) + '&host=1';
-    }, 800);
+        var code;
+        do { code = generateCode(); } while (rooms[code]);
+
+        rooms[code] = {
+            code:       code,
+            name:       roomname,
+            host:       username,
+            platform:   platform,
+            type:       selectedType,
+            password:   selectedType === 'private' ? password : null,
+            active:     true,
+            created_at: new Date().toISOString(),
+            members:    [username]
+        };
+
+        saveRooms(rooms, function(err2) {
+            setLoading(btn, false);
+            if (err2) { showMsg('create-msg','error','✗ Could not connect to the server.'); return; }
+            showMsg('create-msg','success','✓ Room created! Code: ' + code);
+            try {
+                sessionStorage.setItem('w4p_room', JSON.stringify({
+                    code: code, name: roomname, host: username,
+                    platform: platform, username: username, role: 'host'
+                }));
+            } catch(_) {}
+            setTimeout(function() {
+                window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username) + '&host=1';
+            }, 800);
+        });
+    });
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
