@@ -349,8 +349,21 @@ select.input option{background:var(--charcoal);}
 </div>
 
 <script>
-// ── room.php URL — kendi sunucuna göre ayarla ──────────────────────
-var ROOM_API = '/api/room';
+// ── localStorage tabanlı oda yönetimi (backend yok) ───────────────
+var ROOMS_KEY = 'w4p_rooms';
+
+function loadRooms() {
+    try { return JSON.parse(localStorage.getItem(ROOMS_KEY) || '{}'); } catch(_) { return {}; }
+}
+function saveRooms(rooms) {
+    localStorage.setItem(ROOMS_KEY, JSON.stringify(rooms));
+}
+function generateCode() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    var code = '';
+    for (var i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+}
 
 // ── Tab switch ────────────────────────────────────────────────────
 function switchTab(tab) {
@@ -373,7 +386,7 @@ function setType(type) {
 // ── Kod girilince oda bilgisini önizle ────────────────────────────
 var checkTimer = null;
 function onCodeInput() {
-    var code = document.getElementById('join-code').value.trim();
+    var code = document.getElementById('join-code').value.trim().toUpperCase();
     var preview = document.getElementById('join-preview');
     var msg = document.getElementById('join-msg');
     msg.className = 'msg'; msg.textContent = '';
@@ -383,23 +396,18 @@ function onCodeInput() {
 
     clearTimeout(checkTimer);
     checkTimer = setTimeout(function() {
-        fetch(ROOM_API + '?action=check&code=' + encodeURIComponent(code))
-            .then(function(r) { return r.json(); })
-            .then(function(data) {
-                if (data.ok) {
-                    document.getElementById('preview-name').textContent = data.room.name;
-                    document.getElementById('preview-platform').textContent = data.room.platform;
-                    document.getElementById('preview-host').textContent = data.room.host;
-                    document.getElementById('preview-members').textContent = (data.room.members || []).length + ' person';
-                    preview.classList.add('show');
-                } else {
-                    showMsg('join-msg', 'error', '✗ ' + (data.message || 'Invalid room code.'));
-                }
-            })
-            .catch(function() {
-                // API erişilemiyorsa sessizce geç
-            });
-    }, 400);
+        var rooms = loadRooms();
+        var room = rooms[code];
+        if (room && room.active) {
+            document.getElementById('preview-name').textContent = room.name;
+            document.getElementById('preview-platform').textContent = room.platform;
+            document.getElementById('preview-host').textContent = room.host;
+            document.getElementById('preview-members').textContent = (room.members || []).length + ' person';
+            preview.classList.add('show');
+        } else {
+            showMsg('join-msg', 'error', '✗ Invalid room code.');
+        }
+    }, 300);
 }
 
 // ── JOIN ──────────────────────────────────────────────────────────
@@ -407,46 +415,31 @@ function doJoin() {
     var code     = document.getElementById('join-code').value.trim().toUpperCase();
     var username = document.getElementById('join-username').value.trim();
     var btn      = document.getElementById('join-btn');
-    var msg      = document.getElementById('join-msg');
 
-    if (code.length < 4)    { showMsg('join-msg','error','Enter your room code.'); return; }
-    if (username.length < 2){ showMsg('join-msg','error','Your username must be at least two characters long.'); return; }
+    if (code.length < 4)     { showMsg('join-msg','error','Enter your room code.'); return; }
+    if (username.length < 2) { showMsg('join-msg','error','Your username must be at least two characters long.'); return; }
 
-    setLoading(btn, true);
-    msg.className = 'msg';
+    var rooms = loadRooms();
+    var room  = rooms[code];
 
-    fetch(ROOM_API + '?action=join', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ code: code, username: username })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        setLoading(btn, false);
-        if (data.ok) {
-            showMsg('join-msg','success','✓ Odaya katılıyorsun...');
-            // sessionStorage'a oda bilgisini kaydet
-            try {
-                sessionStorage.setItem('w4p_room', JSON.stringify({
-                    code:     data.room.code,
-                    name:     data.room.name,
-                    host:     data.room.host,
-                    platform: data.room.platform,
-                    username: username,
-                    role:     'viewer'
-                }));
-            } catch(_) {}
-            setTimeout(function() {
-                window.location.href = 'watch/index.html?room=' + encodeURIComponent(data.room.code) + '&user=' + encodeURIComponent(username);
-            }, 600);
-        } else {
-            showMsg('join-msg','error','✗ ' + (data.message || 'Bir hata oluştu.'));
-        }
-    })
-    .catch(function() {
-        setLoading(btn, false);
-        showMsg('join-msg','error','✗ Could not connect to the server.');
-    });
+    if (!room)        { showMsg('join-msg','error','✗ Invalid room code: ' + code); return; }
+    if (!room.active) { showMsg('join-msg','error','✗ This room is no longer active.'); return; }
+
+    if (!room.members.includes(username)) {
+        rooms[code].members.push(username);
+        saveRooms(rooms);
+    }
+
+    showMsg('join-msg','success','✓ Odaya katılıyorsun...');
+    try {
+        sessionStorage.setItem('w4p_room', JSON.stringify({
+            code: room.code, name: room.name, host: room.host,
+            platform: room.platform, username: username, role: 'viewer'
+        }));
+    } catch(_) {}
+    setTimeout(function() {
+        window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username);
+    }, 600);
 }
 
 // ── CREATE ────────────────────────────────────────────────────────
@@ -457,53 +450,39 @@ function doCreate() {
     var password = document.getElementById('create-password').value;
     var btn      = document.getElementById('create-btn');
 
-    if (roomname.length < 3){ showMsg('create-msg','error','The room name must be at least 3 characters long.'); return; }
-    if (username.length < 2){ showMsg('create-msg','error','Your username must be at least two characters long.'); return; }
+    if (roomname.length < 3) { showMsg('create-msg','error','The room name must be at least 3 characters long.'); return; }
+    if (username.length < 2) { showMsg('create-msg','error','Your username must be at least two characters long.'); return; }
     if (selectedType === 'private' && password.length < 3) {
         showMsg('create-msg','error','A password is required for the private room (minimum 3 characters).'); return;
     }
 
-    setLoading(btn, true);
-    document.getElementById('create-msg').className = 'msg';
+    var rooms = loadRooms();
+    var code;
+    do { code = generateCode(); } while (rooms[code]);
 
-    fetch(ROOM_API + '?action=create', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-            roomname: roomname,
-            username: username,
-            platform: platform,
-            type:     selectedType,
-            password: password
-        })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-        setLoading(btn, false);
-        if (data.ok) {
-            showMsg('create-msg','success','✓ Room created! Code: ' + data.code);
-            // sessionStorage'a kaydet
-            try {
-                sessionStorage.setItem('w4p_room', JSON.stringify({
-                    code:     data.room.code,
-                    name:     data.room.name,
-                    host:     username,
-                    platform: platform,
-                    username: username,
-                    role:     'host'
-                }));
-            } catch(_) {}
-            setTimeout(function() {
-                window.location.href = 'watch/index.html?room=' + encodeURIComponent(data.code) + '&user=' + encodeURIComponent(username) + '&host=1';
-            }, 800);
-        } else {
-            showMsg('create-msg','error','✗ ' + (data.message || 'An error has occurred.'));
-        }
-    })
-    .catch(function() {
-        setLoading(btn, false);
-        showMsg('create-msg','error','✗ Could not connect to the server.');
-    });
+    rooms[code] = {
+        code:       code,
+        name:       roomname,
+        host:       username,
+        platform:   platform,
+        type:       selectedType,
+        password:   selectedType === 'private' ? password : null,
+        active:     true,
+        created_at: new Date().toISOString(),
+        members:    [username]
+    };
+    saveRooms(rooms);
+
+    showMsg('create-msg','success','✓ Room created! Code: ' + code);
+    try {
+        sessionStorage.setItem('w4p_room', JSON.stringify({
+            code: code, name: roomname, host: username,
+            platform: platform, username: username, role: 'host'
+        }));
+    } catch(_) {}
+    setTimeout(function() {
+        window.location.href = 'watch/index.html?room=' + encodeURIComponent(code) + '&user=' + encodeURIComponent(username) + '&host=1';
+    }, 800);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────
